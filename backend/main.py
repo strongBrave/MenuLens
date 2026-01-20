@@ -11,6 +11,7 @@ from config import settings
 from schemas import MenuResponse, Dish
 from services.llm_service import gemini_analyzer
 from services.search_service import google_searcher
+from services import hybrid_pipeline as hp_module
 from utils.file_utils import encode_image_to_base64, validate_image
 
 # 配置日志
@@ -20,8 +21,8 @@ logger = logging.getLogger(__name__)
 # 创建 FastAPI 应用
 app = FastAPI(
     title="MenuGen API",
-    description="AI-powered menu item recognition and image search",
-    version="1.0.0"
+    description="AI-powered menu item recognition and RAG image enhancement",
+    version="2.0.0"
 )
 
 # 配置 CORS
@@ -32,6 +33,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 全局 Pipeline 实例（在启动时初始化）
+_hybrid_pipeline = None
+
+# 初始化 Hybrid Pipeline
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时初始化 Pipeline"""
+    global _hybrid_pipeline
+    _hybrid_pipeline = hp_module.initialize_hybrid_pipeline(google_searcher, google_searcher)
+    logger.info("✅ MenuGen API v2.0 started - RAG Pipeline enabled")
 
 # 错误处理
 @app.exception_handler(ValueError)
@@ -47,19 +59,26 @@ async def value_error_handler(request, exc):
 @app.get("/health")
 async def health_check():
     """健康检查"""
-    return {"status": "ok", "service": "MenuGen API"}
+    return {
+        "status": "ok",
+        "service": "MenuGen API",
+        "version": "2.0.0",
+        "rag_pipeline_enabled": settings.ENABLE_RAG_PIPELINE
+    }
 
 
 @app.post("/api/analyze-menu", response_model=MenuResponse)
 async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
     """
-    分析菜单图片
+    分析菜单图片并获取图片
     
-    流程：
+    新增 RAG Pipeline (v2.0)：
     1. 验证和编码图片
     2. 调用 Gemini 识别菜品
-    3. 并发搜索菜品图片
-    4. 返回完整数据
+    3. 并发搜索菜品图片（Top 3 候选）
+    4. 视觉验证候选图片相关性
+    5. 验证失败则生成图片
+    6. 返回完整数据
     """
     try:
         # 1. 验证文件
@@ -77,8 +96,8 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
         # 4. 转换为 Base64
         base64_image = encode_image_to_base64(contents)
         
-        # 5. 调用 Gemini 分析
-        logger.info(f"Analyzing menu from file: {file.filename}")
+        # 5. 调用 Gemini 分析菜品
+        logger.info(f"🔍 Analyzing menu from file: {file.filename}")
         dishes = await gemini_analyzer.analyze_menu_image(base64_image)
         
         if not dishes:
@@ -88,26 +107,37 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
                 metadata={"message": "No dishes detected in the image"}
             )
         
-        # 6. 并发搜索图片
-        logger.info(f"Searching images for {len(dishes)} dishes")
-        enriched_dishes = await google_searcher.enrich_dishes_with_images(dishes)
+        # 6. 使用 RAG Pipeline 获取图片
+        logger.info(f"🚀 RAG Pipeline: Processing {len(dishes)} dishes")
         
-        logger.info(f"Successfully processed menu with {len(enriched_dishes)} dishes")
+        if settings.ENABLE_RAG_PIPELINE and _hybrid_pipeline:
+            # 使用新的混合 Pipeline
+            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images(dishes)
+        else:
+            # 使用传统搜索（向后兼容）
+            if not _hybrid_pipeline:
+                logger.warning("⚠️  RAG Pipeline not initialized, using fallback search")
+            else:
+                logger.info("RAG Pipeline disabled in config, using legacy search")
+            enriched_dishes = await google_searcher.enrich_dishes_with_images(dishes)
+        
+        logger.info(f"✅ Successfully processed menu with {len(enriched_dishes)} dishes")
         
         return MenuResponse(
             success=True,
             dishes=enriched_dishes,
             metadata={
                 "total_dishes": len(enriched_dishes),
-                "filename": file.filename
+                "filename": file.filename,
+                "rag_pipeline": settings.ENABLE_RAG_PIPELINE
             }
         )
         
     except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
+        logger.error(f"❌ Validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"❌ Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
