@@ -37,6 +37,9 @@ class Settings:
     # Validation
     VALIDATE_SETTINGS: bool = os.getenv("VALIDATE_SETTINGS", "true").lower() == "true"
     
+    # Proxy
+    PROXY_URL: str = os.getenv("PROXY_URL", "")
+    
     def __init__(self):
         if self.VALIDATE_SETTINGS:
             self._validate()

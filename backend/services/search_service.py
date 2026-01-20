@@ -70,14 +70,15 @@ class GoogleSearcher:
                 # 增加连接和读取超时
                 timeout = aiohttp.ClientTimeout(
                     total=settings.SEARCH_TIMEOUT,
-                    connect=5,
-                    sock_read=5
+                    connect=60,
+                    sock_read=60
                 )
                 
                 async with session.get(
                     self.search_url,
                     params=params,
-                    timeout=timeout
+                    timeout=timeout,
+                    proxy=settings.PROXY_URL
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
