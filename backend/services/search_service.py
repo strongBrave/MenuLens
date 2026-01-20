@@ -57,7 +57,8 @@ class GoogleSearcher:
                 async with session.get(
                     self.search_url,
                     params=params,
-                    timeout=timeout
+                    timeout=timeout,
+                    proxy='http://127.0.0.1:7897',
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
