@@ -1,11 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* 自定义样式 */
-* {
-  @apply box-border;
-}
+@import "tailwindcss";
 
 html, body, #root {
   height: 100%;
@@ -13,27 +6,11 @@ html, body, #root {
   padding: 0;
 }
 
-/* 响应式工具类 */
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* 平滑滚动 */
-html {
-  scroll-behavior: smooth;
-}
-
-/* 按钮过渡 */
-button {
-  @apply transition-all duration-200;
-}
-
-/* 输入框样式 */
-input, textarea, select {
-  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500;
 }
 button:hover {
   border-color: #646cff;
