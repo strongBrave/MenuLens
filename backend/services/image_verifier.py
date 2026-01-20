@@ -17,7 +17,7 @@ class ImageVerifier:
     
     def __init__(self):
         self._client = None
-        self.model = "gemini-1.5-flash"  # 快速且便宜的模型用于验证
+        self.model = "gemini-2.5-flash-lite"  # 快速且便宜的模型用于验证
     
     @property
     def client(self) -> OpenAI:
@@ -87,11 +87,16 @@ class ImageVerifier:
                 logger.warning(f"Failed to parse verification score: {response}")
                 return 0.0
                 
-        except APITimeoutError:
-            logger.warning(f"⏱️  Timeout verifying image for {dish_name}")
+        except APITimeoutError as e:
+            logger.warning(f"⏱️  Timeout verifying image for {dish_name} - returning 0.0")
             return 0.0
         except APIError as e:
-            logger.error(f"API error verifying {dish_name}: {str(e)}")
+            # 如果是 HTML 返回或其他内容问题，这通常意味着 URL 无效
+            error_str = str(e).lower()
+            if 'html' in error_str or 'mime type' in error_str:
+                logger.debug(f"Invalid URL (returned HTML instead of image): {dish_name}")
+            else:
+                logger.error(f"API error verifying {dish_name}: {str(e)}")
             return 0.0
         except Exception as e:
             logger.error(f"Error verifying image for {dish_name}: {str(e)}")

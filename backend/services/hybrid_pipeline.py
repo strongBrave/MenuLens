@@ -110,23 +110,40 @@ class HybridImagePipeline:
     
     async def _check_urls_alive(self, urls: List[str], timeout: int = None) -> List[str]:
         """
-        批量检查 URL 是否存活
+        批量检查 URL 是否存活且是真正的图片
         
-        使用 HEAD 请求快速验证 URL 有效性，排除 403/404 等死链
+        验证项：
+        1. HTTP 状态码 < 400
+        2. Content-Type 必须是图片类型（image/jpeg, image/png, image/webp）
+        3. 排除 HTML 重定向/错误页面
         """
         if timeout is None:
             timeout = settings.IMAGE_URL_CHECK_TIMEOUT
+        
+        VALID_IMAGE_TYPES = {
+            'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'
+        }
         
         async def check_single_url(url: str) -> Optional[str]:
             try:
                 timeout_obj = aiohttp.ClientTimeout(total=timeout)
                 async with aiohttp.ClientSession() as session:
                     async with session.head(url, timeout=timeout_obj, allow_redirects=True) as resp:
-                        if resp.status < 400:  # 2xx, 3xx 状态码
-                            return url
-                        else:
+                        if resp.status >= 400:
                             logger.debug(f"URL check failed ({resp.status}): {url[:50]}...")
                             return None
+                        
+                        # 检查 Content-Type 是否是图片
+                        content_type = resp.headers.get('content-type', '').lower()
+                        # 提取主类型（处理 "image/jpeg; charset=utf-8" 的情况）
+                        base_type = content_type.split(';')[0].strip()
+                        
+                        if base_type not in VALID_IMAGE_TYPES:
+                            logger.debug(f"Invalid content-type ({base_type}): {url[:50]}...")
+                            return None
+                        
+                        return url
+                        
             except asyncio.TimeoutError:
                 logger.debug(f"URL check timeout: {url[:50]}...")
                 return None
@@ -153,6 +170,13 @@ class HybridImagePipeline:
         这是 RAG Pipeline 的核心：使用 Gating Agent 验证相关性
         """
         if not candidate_urls:
+            logger.debug(f"No candidate URLs for {dish.english_name}")
+            return None
+        
+        # 快速过滤：如果只有 1 个候选且验证失败会很浪费时间
+        # 如果候选数量很少，使用更严格的标准
+        if len(candidate_urls) < 2:
+            logger.info(f"⚠️  Only {len(candidate_urls)} candidate, skipping verification (too risky)")
             return None
         
         logger.info(f"🔎 Verifying {len(candidate_urls)} images...")
