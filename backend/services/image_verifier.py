@@ -1,11 +1,11 @@
 """图片相关性验证服务 - 使用 Gemini Flash 作为视觉裁判"""
 
-import aiohttp
 import asyncio
 import logging
 import base64
 from typing import Optional
-from openai import OpenAI
+import aiohttp
+from openai import OpenAI, APIError, APITimeoutError
 
 from config import settings
 
@@ -17,6 +17,7 @@ class ImageVerifier:
     
     def __init__(self):
         self._client = None
+        self.model = "gemini-1.5-flash"  # 快速且便宜的模型用于验证
     
     @property
     def client(self) -> OpenAI:
@@ -38,7 +39,7 @@ class ImageVerifier:
         """
         验证图片是否与菜品相关
         
-        使用 Gemini 1.5 Flash 进行快速视觉验证
+        使用 Gemini Flash 进行快速视觉验证
         
         Args:
             dish_name: 英文菜名
@@ -52,7 +53,7 @@ class ImageVerifier:
         try:
             # 构建验证提示词
             prompt = f"""你是一个严格的美食图片质量检查官。
-            
+
 请评估这张图片是否准确展示了以下菜品：
 
 菜品名称：{original_name} ({dish_name})
@@ -67,9 +68,45 @@ class ImageVerifier:
 请返回一个单独的数字，范围 0.0-1.0，只返回数字，不要有其他文字。
 示例：0.85"""
             
-            # 调用 Gemini 进行验证（使用 vision 能力）
-            message = self.client.messages.create(
-                model="gemini-1.5-flash",  # 快速且便宜的模型
+            # 使用异步线程调用同步 API
+            response = await asyncio.to_thread(
+                self._call_verify_api,
+                dish_name=dish_name,
+                image_url=image_url,
+                prompt=prompt
+            )
+            
+            # 解析分数
+            try:
+                score = float(response.strip())
+                # 确保分数在 0-1 范围内
+                score = max(0.0, min(1.0, score))
+                logger.debug(f"Image verification: {dish_name} = {score:.2f}")
+                return score
+            except ValueError:
+                logger.warning(f"Failed to parse verification score: {response}")
+                return 0.0
+                
+        except APITimeoutError:
+            logger.warning(f"⏱️  Timeout verifying image for {dish_name}")
+            return 0.0
+        except APIError as e:
+            logger.error(f"API error verifying {dish_name}: {str(e)}")
+            return 0.0
+        except Exception as e:
+            logger.error(f"Error verifying image for {dish_name}: {str(e)}")
+            return 0.0
+    
+    def _call_verify_api(self, dish_name: str, image_url: str, prompt: str) -> str:
+        """
+        同步 API 调用（在线程中执行以保持异步）
+        
+        使用 chat.completions.create 而非 messages.create
+        """
+        try:
+            # 使用 chat.completions.create（OpenAI SDK 的正确方法）
+            message = self.client.chat.completions.create(
+                model=self.model,
                 max_tokens=10,
                 timeout=settings.IMAGE_VERIFY_TIMEOUT,
                 messages=[
@@ -77,39 +114,27 @@ class ImageVerifier:
                         "role": "user",
                         "content": [
                             {
-                                "type": "image",
-                                "source": {
-                                    "type": "url",
-                                    "url": image_url,
-                                },
-                            },
-                            {
                                 "type": "text",
                                 "text": prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url
+                                }
                             }
-                        ],
+                        ]
                     }
-                ],
+                ]
             )
             
-            # 解析分数
-            response_text = message.content[0].text.strip()
-            try:
-                score = float(response_text)
-                # 确保分数在 0-1 范围内
-                score = max(0.0, min(1.0, score))
-                logger.info(f"Image verification: {dish_name} = {score:.2f}")
-                return score
-            except ValueError:
-                logger.warning(f"Failed to parse verification score: {response_text}")
-                return 0.0
-                
-        except asyncio.TimeoutError:
-            logger.error(f"Timeout verifying image for {dish_name}")
-            return 0.0
+            # 提取响应文本
+            response_text = message.choices[0].message.content.strip()
+            return response_text
+            
         except Exception as e:
-            logger.error(f"Error verifying image for {dish_name}: {str(e)}")
-            return 0.0
+            logger.error(f"API call error: {type(e).__name__}: {str(e)}")
+            raise
     
     async def download_image_as_base64(self, image_url: str) -> Optional[str]:
         """
