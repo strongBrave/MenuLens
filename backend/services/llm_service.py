@@ -64,7 +64,6 @@ class GeminiAnalyzer:
                 model=self.model,
                 messages=[message],
                 temperature=settings.LLM_TEMPERATURE,
-                max_tokens=2000,
                 timeout=settings.LLM_TIMEOUT
             )
             
