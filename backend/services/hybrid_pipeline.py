@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import aiohttp
+import time
 from typing import List, Optional
 
 from schemas import Dish
@@ -56,27 +57,33 @@ class HybridImagePipeline:
             logger.info(f"RAG Pipeline disabled, using legacy search for {dish.english_name}")
             return None
         
+        start_time = time.time()
         logger.info(f"🔍 Pipeline START for {dish.english_name}")
         
         # Step 1: 搜索多个候选图片
+        search_start = time.time()
         candidate_urls = await self._search_candidates(dish)
+        search_time = time.time() - search_start
         
         if not candidate_urls:
-            logger.warning(f"No search results for {dish.english_name}, skipping to generation")
+            logger.warning(f"⚠️  No search results for {dish.english_name} ({search_time:.1f}s), skipping to generation")
             return await self._generate_image(dish)
         
-        logger.info(f"📋 Found {len(candidate_urls)} candidates for {dish.english_name}")
+        logger.info(f"📋 Found {len(candidate_urls)} candidates ({search_time:.1f}s)")
         
         # Step 2: 验证候选图片
+        verify_start = time.time()
         best_image_url = await self._verify_and_select(dish, candidate_urls)
+        verify_time = time.time() - verify_start
         
         if best_image_url:
-            logger.info(f"✅ Using search result for {dish.english_name}: {best_image_url[:60]}...")
+            total_time = time.time() - start_time
+            logger.info(f"✅ Using search result ({verify_time:.1f}s verification, {total_time:.1f}s total)")
             return best_image_url
         
         # Step 3: 验证失败，降级为生成
         logger.warning(f"⚠️  No valid search result (Score < {settings.IMAGE_VERIFY_SCORE_THRESHOLD}), "
-                      f"generating image for {dish.english_name}")
+                      f"generating image ({verify_time:.1f}s verification)")
         return await self._generate_image(dish)
     
     async def _search_candidates(self, dish: Dish) -> List[str]:
@@ -101,12 +108,15 @@ class HybridImagePipeline:
             logger.error(f"Error searching candidates for {dish.english_name}: {str(e)}")
             return []
     
-    async def _check_urls_alive(self, urls: List[str], timeout: int = 3) -> List[str]:
+    async def _check_urls_alive(self, urls: List[str], timeout: int = None) -> List[str]:
         """
         批量检查 URL 是否存活
         
         使用 HEAD 请求快速验证 URL 有效性，排除 403/404 等死链
         """
+        if timeout is None:
+            timeout = settings.IMAGE_URL_CHECK_TIMEOUT
+        
         async def check_single_url(url: str) -> Optional[str]:
             try:
                 timeout_obj = aiohttp.ClientTimeout(total=timeout)
@@ -117,6 +127,9 @@ class HybridImagePipeline:
                         else:
                             logger.debug(f"URL check failed ({resp.status}): {url[:50]}...")
                             return None
+            except asyncio.TimeoutError:
+                logger.debug(f"URL check timeout: {url[:50]}...")
+                return None
             except Exception as e:
                 logger.debug(f"URL check error: {type(e).__name__}")
                 return None

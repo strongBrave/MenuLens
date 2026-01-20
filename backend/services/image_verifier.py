@@ -71,6 +71,7 @@ class ImageVerifier:
             message = self.client.messages.create(
                 model="gemini-1.5-flash",  # 快速且便宜的模型
                 max_tokens=10,
+                timeout=settings.IMAGE_VERIFY_TIMEOUT,
                 messages=[
                     {
                         "role": "user",

@@ -38,7 +38,8 @@ class Settings:
     GENERATION_API_URL: str = os.getenv("GENERATION_API_URL", "https://api.openai.com/v1/images/generations")
     GENERATION_API_KEY: str = os.getenv("GENERATION_API_KEY", "")  # DALL-E 或 Imagen API Key
     GENERATION_MODEL: str = os.getenv("GENERATION_MODEL", "dall-e-3")  # 生成模型
-    IMAGE_URL_CHECK_TIMEOUT: int = int(os.getenv("IMAGE_URL_CHECK_TIMEOUT", 3))
+    IMAGE_URL_CHECK_TIMEOUT: int = int(os.getenv("IMAGE_URL_CHECK_TIMEOUT", 5))
+    IMAGE_VERIFY_TIMEOUT: int = int(os.getenv("IMAGE_VERIFY_TIMEOUT", 15))
     
     # File
     MAX_FILE_SIZE_MB: int = int(os.getenv("MAX_FILE_SIZE_MB", 10))
