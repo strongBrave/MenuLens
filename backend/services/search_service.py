@@ -37,13 +37,16 @@ class GoogleSearcher:
         
         # 处理结果
         enriched_dishes = []
+        success_count = 0
         for dish, result in zip(dishes, results):
             if isinstance(result, Exception):
                 logger.warning(f"Failed to search image for {dish.english_name}: {str(result)}")
-            else:
+            elif result:
                 dish.image_url = result
+                success_count += 1
             enriched_dishes.append(dish)
         
+        logger.info(f"Image search completed: {success_count}/{len(dishes)} dishes got images")
         return enriched_dishes
     
     async def _search_single_image(
@@ -64,10 +67,17 @@ class GoogleSearcher:
                     "safe": "active",
                 }
                 
+                # 增加连接和读取超时
+                timeout = aiohttp.ClientTimeout(
+                    total=settings.SEARCH_TIMEOUT,
+                    connect=5,
+                    sock_read=5
+                )
+                
                 async with session.get(
                     self.search_url,
                     params=params,
-                    timeout=aiohttp.ClientTimeout(total=settings.SEARCH_TIMEOUT)
+                    timeout=timeout
                 ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
@@ -75,17 +85,22 @@ class GoogleSearcher:
                         if items:
                             return items[0].get("link")
                     elif resp.status == 403:
-                        logger.error("Google Search API quota exceeded")
+                        logger.error("Google Search API quota exceeded or permission denied")
+                    elif resp.status == 429:
+                        logger.warning("Google Search API rate limit exceeded - retry later")
                     else:
-                        logger.warning(f"Search API returned status {resp.status}")
+                        logger.warning(f"Search API returned status {resp.status} for {dish.english_name}")
                 
                 return None
                 
             except asyncio.TimeoutError:
-                logger.warning(f"Timeout searching for {dish.english_name}")
+                logger.warning(f"⏱️  Timeout searching for {dish.english_name} (timeout: {settings.SEARCH_TIMEOUT}s) - try increasing SEARCH_TIMEOUT or decreasing MAX_CONCURRENT_SEARCHES")
+                return None
+            except aiohttp.ClientError as e:
+                logger.error(f"HTTP error for {dish.english_name}: {type(e).__name__}: {str(e)}")
                 return None
             except Exception as e:
-                logger.error(f"Error searching for {dish.english_name}: {str(e)}")
+                logger.error(f"Unexpected error searching for {dish.english_name}: {type(e).__name__}: {str(e)}")
                 return None
 
 
