@@ -75,11 +75,14 @@ class GeminiAnalyzer:
             # 转换为 Dish 对象
             dishes = []
             for item in dishes_data.get("dishes", []):
+                # 截断描述以确保不超过限制
+                description = item.get("description", "")[:500]
+                
                 dish = Dish(
                     original_name=item["original_name"],
                     english_name=item["english_name"],
-                    description=item["description"],
-                    flavor_tags=item.get("flavor_tags", []),
+                    description=description,
+                    flavor_tags=item.get("flavor_tags", [])[:5],
                     search_term=f"{item['english_name']} {item['original_name']} food dish"
                 )
                 dishes.append(dish)

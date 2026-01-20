@@ -8,7 +8,7 @@ class Dish(BaseModel):
     id: str = Field(default_factory=lambda: str(datetime.now().timestamp()))
     original_name: str = Field(..., description="菜品原名（中文/本地语言）")
     english_name: str = Field(..., description="英文名称或通用名")
-    description: str = Field(..., max_length=200, description="菜品描述")
+    description: str = Field(..., max_length=500, description="菜品描述")
     flavor_tags: List[str] = Field(..., max_items=5, description="口味标签")
     search_term: str = Field(..., description="搜索词，格式: {EN} {ZH} food dish")
     image_url: Optional[str] = Field(None, description="菜品图片URL")
