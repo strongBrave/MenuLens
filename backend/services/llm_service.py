@@ -20,8 +20,8 @@ class GeminiAnalyzer:
         """延迟初始化客户端"""
         if self._client is None:
             self._client = OpenAI(
-                api_key=settings.GOOGLE_API_KEY,
-                base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+                api_key=settings.LLM_API_KEY,
+                base_url=settings.LLM_BASE_URL,
             )
         return self._client
     

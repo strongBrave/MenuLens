@@ -8,7 +8,6 @@ class Settings:
     """应用全局配置"""
     
     # API Keys
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
     SEARCH_API_KEY: str = os.getenv("SEARCH_API_KEY", "")
     SEARCH_ENGINE_ID: str = os.getenv("SEARCH_ENGINE_ID", "")
     
@@ -20,6 +19,8 @@ class Settings:
     CORS_ORIGIN: str = os.getenv("CORS_ORIGIN", "http://localhost:5173")
     
     # LLM
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL")
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-1.5-pro")
     LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", 30))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", 0.2))
@@ -42,7 +43,7 @@ class Settings:
     
     def _validate(self):
         """验证必需的环境变量"""
-        required = ["GOOGLE_API_KEY", "SEARCH_API_KEY", "SEARCH_ENGINE_ID"]
+        required = ["LLM_API_KEY", "LLM_BASE_URL", "SEARCH_API_KEY", "SEARCH_ENGINE_ID"]
         missing = [k for k in required if not getattr(self, k, None)]
         if missing:
             logging.warning(f"Missing environment variables: {missing}")
