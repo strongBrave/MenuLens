@@ -10,13 +10,21 @@ from PIL import Image
 from config import settings
 from schemas import MenuResponse, Dish
 from services.llm_service import gemini_analyzer
-from services.search_service import google_searcher
 from services import hybrid_pipeline as hp_module
 from utils.file_utils import encode_image_to_base64, validate_image
+
+# 根据配置选择搜索服务
+if settings.SEARCH_PROVIDER == "serpapi":
+    from services.serp_search import serp_searcher as searcher
+    logger_msg = "SerpAPI"
+else:
+    from services.search_service import google_searcher as searcher
+    logger_msg = "Google Custom Search"
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -42,8 +50,8 @@ _hybrid_pipeline = None
 async def startup_event():
     """应用启动时初始化 Pipeline"""
     global _hybrid_pipeline
-    _hybrid_pipeline = hp_module.initialize_hybrid_pipeline(google_searcher, google_searcher)
-    logger.info("✅ MenuGen API v2.0 started - RAG Pipeline enabled")
+    _hybrid_pipeline = hp_module.initialize_hybrid_pipeline(searcher, searcher)
+    logger.info(f"✅ MenuGen API v2.0 started - Using {logger_msg} for image search")
 
 # 错误处理
 @app.exception_handler(ValueError)

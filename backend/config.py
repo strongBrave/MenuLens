@@ -8,8 +8,13 @@ class Settings:
     """应用全局配置"""
     
     # API Keys
-    SEARCH_API_KEY: str = os.getenv("SEARCH_API_KEY", "")
-    SEARCH_ENGINE_ID: str = os.getenv("SEARCH_ENGINE_ID", "")
+    SEARCH_API_KEY: str = os.getenv("SEARCH_API_KEY", "")  # SerpAPI key (新)
+    SEARCH_ENGINE_ID: str = os.getenv("SEARCH_ENGINE_ID", "")  # 保留向后兼容，但不再使用
+    SEARCH_PROVIDER: str = os.getenv("SEARCH_PROVIDER", "serpapi")  # "serpapi" 或 "google"
+    
+    # SerpAPI 配置
+    SERPAPI_KEY: str = os.getenv("SERPAPI_KEY", "")
+    SERPAPI_ENGINE: str = os.getenv("SERPAPI_ENGINE", "google")  # google, bing, baidu 等
     
     # Server
     BACKEND_HOST: str = os.getenv("BACKEND_HOST", "0.0.0.0")
@@ -32,7 +37,7 @@ class Settings:
     
     # RAG Pipeline
     ENABLE_RAG_PIPELINE: bool = os.getenv("ENABLE_RAG_PIPELINE", "true").lower() == "true"
-    SEARCH_CANDIDATE_RESULTS: int = int(os.getenv("SEARCH_CANDIDATE_RESULTS", 3))  # 搜索 Top 3
+    SEARCH_CANDIDATE_RESULTS: int = int(os.getenv("SEARCH_CANDIDATE_RESULTS", 10))  # 搜索 Top 3
     IMAGE_VERIFY_SCORE_THRESHOLD: float = float(os.getenv("IMAGE_VERIFY_SCORE_THRESHOLD", 0.7))
     ENABLE_IMAGE_GENERATION: bool = os.getenv("ENABLE_IMAGE_GENERATION", "true").lower() == "true"
     GENERATION_API_URL: str = os.getenv("GENERATION_API_URL", "https://api.openai.com/v1/images/generations")
