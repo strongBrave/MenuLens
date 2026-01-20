@@ -19,9 +19,10 @@ class GeminiAnalyzer:
     def client(self):
         """延迟初始化客户端"""
         if self._client is None:
+            # 简化初始化，避免 proxies 参数问题
             self._client = OpenAI(
                 api_key=settings.LLM_API_KEY,
-                base_url=settings.LLM_BASE_URL,
+                base_url=settings.LLM_BASE_URL
             )
         return self._client
     
