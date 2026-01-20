@@ -100,6 +100,8 @@ class HybridImagePipeline:
             
             # 快速检查 URL 有效性（发送 HEAD 请求）
             valid_urls = await self._check_urls_alive(urls)
+            extracted_num = min(len(valid_urls), settings.SEARCH_CANDIDATE_RESULTS)
+            valid_urls = valid_urls[:extracted_num]
             logger.info(f"URL validity check: {len(valid_urls)}/{len(urls)} alive")
             
             return valid_urls

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import logging
 import base64
 from typing import Optional
@@ -11,6 +11,7 @@ from config import settings
 from schemas import MenuResponse, Dish
 from services.llm_service import gemini_analyzer
 from services import hybrid_pipeline as hp_module
+from services.image_proxy import image_proxy
 from utils.file_utils import encode_image_to_base64, validate_image
 
 # 根据配置选择搜索服务
@@ -178,6 +179,56 @@ async def test_analyze():
         dishes=test_dishes,
         metadata={"message": "Test data - no real analysis performed"}
     )
+
+
+# ===== 图片代理端点 =====
+
+@app.get("/api/proxy-image")
+async def proxy_image_endpoint(url: str, retry: int = 3):
+    """
+    图片代理端点 - 绕过 CORS 和反爬虫限制
+    
+    前端使用方式：
+    1. 原链接：https://example.com/image.jpg
+    2. 改为：/api/proxy-image?url=https://example.com/image.jpg
+    3. 可选参数：retry=3（重试次数，默认3次）
+    
+    优势：
+    - 绕过浏览器 CORS 限制
+    - 轮换 User-Agent（某些图片服务器只允许浏览器访问）
+    - 自动重试机制（处理被限流等临时问题）
+    - 后端可以处理 SSL 错误等问题
+    """
+    try:
+        if not url:
+            raise HTTPException(status_code=400, detail="Missing 'url' parameter")
+        
+        # 限制重试次数在合理范围内
+        retry = min(max(retry, 1), 5)
+        
+        # 获取图片（包含重试机制）
+        result = await image_proxy.proxy_image(url, timeout=15, retry=retry)
+        
+        if result is None:
+            raise HTTPException(status_code=502, detail="Failed to fetch image from URL after retries")
+        
+        image_data, content_type = result
+        
+        # 返回图片流
+        return StreamingResponse(
+            iter([image_data]),
+            media_type=content_type,
+            headers={
+                "Cache-Control": "public, max-age=86400",  # 缓存 24 小时
+                "Content-Disposition": "inline",
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Proxy error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 if __name__ == "__main__":
