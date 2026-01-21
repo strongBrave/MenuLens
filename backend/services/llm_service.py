@@ -76,13 +76,15 @@ class GeminiAnalyzer:
             for item in dishes_data.get("dishes", []):
                 # 截断描述以确保不超过限制
                 description = item.get("description", "")[:500]
+
+                name_to_search = item['original_name'] if item.get('original_name') else item['english_name']
                 
                 dish = Dish(
                     original_name=item["original_name"],
                     english_name=item["english_name"],
                     description=description,
                     flavor_tags=item.get("flavor_tags", [])[:5],
-                    search_term=f"{item['english_name']} {item['original_name']} food dish",
+                    search_term=f"{name_to_search} food dish",
                     price=item.get("price"),
                     currency=item.get("currency"),
                     language_code=item.get("language_code", "en")
