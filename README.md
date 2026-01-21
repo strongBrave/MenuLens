@@ -1,17 +1,17 @@
-# 🍽️ MenuGen
+# 🍽️ MenuLens
 > **AI-Powered Visual Menu Explorer**  
 > *Turn any text menu into a visual feast with Gemini AI & RAG Search.*
 
-![MenuGen Demo](./frontend/src/assets/demo_placeholder.png)
+![MenuLens Demo](./frontend/src/assets/demo_placeholder.png)
 *(Place a screenshot of your app here)*
 
 ## ✨ Overview
 
-MenuGen is a modern full-stack application that helps travelers and foodies understand foreign menus instantly. 
+MenuLens is a modern full-stack application that helps travelers and foodies understand foreign menus instantly. 
 
 It uses **Google Gemini 1.5 Pro** to extract dishes from menu photos and a **Hybrid RAG Pipeline** (Retrieval-Augmented Generation) to automatically find, verify, and display high-quality images for each dish.
 
-Whether you're in a local diner or a foreign country, MenuGen visualizes what you're about to eat.
+Whether you're in a local diner or a foreign country, MenuLens visualizes what you're about to eat.
 
 ## 🚀 Key Features
 
@@ -43,7 +43,7 @@ Whether you're in a local diner or a foreign country, MenuGen visualizes what yo
 
 ## 🧩 Architecture
 
-MenuGen uses a **Two-Stage Pipeline** for maximum performance:
+MenuLens uses a **Two-Stage Pipeline** for maximum performance:
 
 ```mermaid
 graph TD
@@ -115,7 +115,7 @@ Visit `http://localhost:5173` to start exploring!
 ## 📂 Project Structure
 
 ```
-MenuGen/
+MenuLens/
 ├── backend/
 │   ├── main.py              # FastAPI entry & endpoints
 │   ├── services/

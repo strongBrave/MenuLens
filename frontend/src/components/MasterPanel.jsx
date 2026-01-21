@@ -37,7 +37,7 @@ export default function MasterPanel({
             {/* Header */}
             <div className="flex items-center gap-2 mb-4 px-2">
                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">M</div>
-               <h1 className="text-lg font-bold text-slate-800">MenuGen</h1>
+               <h1 className="text-lg font-bold text-slate-800">MenuLens</h1>
             </div>
 
             {/* Upload Component Logic */}

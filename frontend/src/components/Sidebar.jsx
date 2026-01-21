@@ -52,7 +52,7 @@ export default function Sidebar({ onUpload, isLoading, onReset, hasResults }) {
            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-indigo-200 shadow-lg group-hover:scale-110 transition-transform duration-300">
              M
            </div>
-           <h1 className="text-2xl font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">MenuGen</h1>
+           <h1 className="text-2xl font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">MenuLens</h1>
         </div>
         <p className="text-slate-500 text-sm ml-1">AI-Powered Menu Explorer</p>
       </div>
@@ -152,7 +152,7 @@ export default function Sidebar({ onUpload, isLoading, onReset, hasResults }) {
 
       {/* Footer */}
       <div className="p-6 border-t border-slate-200 bg-slate-50/50">
-        <p className="text-xs text-slate-400 text-center font-medium">© 2026 MenuGen AI</p>
+        <p className="text-xs text-slate-400 text-center font-medium">© 2026 MenuLens AI</p>
       </div>
     </aside>
   );
