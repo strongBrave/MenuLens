@@ -16,7 +16,29 @@ export async function analyzeMenu(imageFile) {
   
   return apiClient.post('/api/analyze-menu', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000,  // 明确指定请求超时
+    timeout: 120000,
+  });
+}
+
+/**
+ * 阶段一：仅分析文本（快速）
+ */
+export async function analyzeMenuText(imageFile) {
+  const formData = new FormData();
+  formData.append('file', imageFile);
+  
+  return apiClient.post('/api/analyze-text-only', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
+}
+
+/**
+ * 阶段二：搜索单个菜品的图片
+ */
+export async function searchDishImage(dish) {
+  return apiClient.post('/api/search-dish-image', dish, {
+    timeout: 30000,
   });
 }
 

@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import DishImage from './DishImage';
 
 export default function DishDetailSidebar({ dish, onClose }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // 当 dish 改变时，重置图片索引
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [dish]);
+
   // Close on ESC key
   useEffect(() => {
     const handleEsc = (e) => {
@@ -12,6 +19,33 @@ export default function DishDetailSidebar({ dish, onClose }) {
   }, [onClose]);
 
   if (!dish) return null;
+
+  // 获取当前显示的图片 URL
+  const getCurrentImageUrl = () => {
+    if (dish.image_urls && dish.image_urls.length > 0) {
+      return dish.image_urls[currentImageIndex];
+    }
+    return dish.image_url;
+  };
+
+  // 切换下一张图片
+  const handleNextImage = () => {
+    if (dish.image_urls && dish.image_urls.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % dish.image_urls.length);
+    }
+  };
+
+  // 朗读菜品原名
+  const handleSpeak = () => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(dish.original_name);
+      // 尝试使用检测到的语言，如果不支持则回退到默认
+      if (dish.language_code) {
+        utterance.lang = dish.language_code;
+      }
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -34,22 +68,61 @@ export default function DishDetailSidebar({ dish, onClose }) {
         </button>
 
         {/* Hero Image */}
-        <div className="h-72 w-full">
+        <div className="h-72 w-full relative group">
           <DishImage 
-            url={dish.image_url} 
+            url={getCurrentImageUrl()} 
             alt={dish.english_name} 
             className="w-full h-full"
           />
+          
+          {/* Switch Image Button */}
+          {dish.image_urls && dish.image_urls.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextImage();
+              }}
+              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-indigo-600 p-2 rounded-full shadow-lg transition-all transform hover:scale-105"
+              title="Next Image"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Content */}
         <div className="p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {dish.english_name}
-          </h1>
-          <h2 className="text-xl text-gray-500 font-medium mb-6">
-            {dish.original_name}
-          </h2>
+          <div className="flex justify-between items-start mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-4">
+              {dish.english_name}
+            </h1>
+            {/* Price Display */}
+            {dish.price && (
+               <div className="text-right">
+                 <span className="block text-2xl font-bold text-indigo-600">
+                   {dish.currency} {dish.price}
+                 </span>
+               </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-xl text-gray-500 font-medium">
+              {dish.original_name}
+            </h2>
+            {/* TTS Button */}
+            <button 
+              onClick={handleSpeak}
+              className="text-indigo-400 hover:text-indigo-600 transition-colors p-1 rounded-full hover:bg-indigo-50"
+              title="Speak"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+          </div>
 
           {/* Flavor Tags */}
           <div className="flex flex-wrap gap-2 mb-8">

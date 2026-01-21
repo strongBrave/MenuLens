@@ -5,13 +5,13 @@ import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import DishDetailSidebar from './components/DishDetailSidebar';
 import EmptyState from './components/EmptyState';
-import { analyzeMenu } from './api/client';
+import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
 function App() {
   const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('upload'); // 'upload' | 'analyzing' | 'searching' | 'done'
+  const [step, setStep] = useState('upload'); // 'upload' | 'analyzing' | 'done'
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
 
@@ -19,26 +19,59 @@ function App() {
     setError(null);
     setLoading(true);
     setStep('analyzing');
+    setDishes([]);
 
     try {
-      const response = await analyzeMenu(file);
+      // 1. 快速获取文本结果
+      const response = await analyzeMenuText(file);
 
       if (response.data.success) {
-        setStep('searching');
-        await new Promise(r => setTimeout(r, 500));
-        setDishes(response.data.dishes || []);
+        const initialDishes = response.data.dishes || [];
+        setDishes(initialDishes);
         setStep('done');
+        setLoading(false);
+
+        // 2. 异步加载图片 (乐观 UI)
+        loadImagesForDishes(initialDishes);
       } else {
         setError(response.data.error || 'Failed to analyze menu');
         setStep('upload');
+        setLoading(false);
       }
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || 'An error occurred';
       setError(errorMessage);
       setStep('upload');
-      console.error('Error:', err);
-    } finally {
       setLoading(false);
+      console.error('Error:', err);
+    }
+  };
+
+  const loadImagesForDishes = async (initialDishes) => {
+    // 逐个加载图片，避免阻塞
+    for (let i = 0; i < initialDishes.length; i++) {
+      const dish = initialDishes[i];
+      try {
+        const res = await searchDishImage(dish);
+        if (res.data.success && res.data.dishes && res.data.dishes.length > 0) {
+          const updatedDish = res.data.dishes[0];
+          
+          setDishes(currentDishes => {
+            const newDishes = [...currentDishes];
+            // 找到对应的 dish 并更新
+            // 假设按顺序或者用 ID (如果后端没返回 ID，我们可以用 index)
+            // 这里我们假设后端返回的 dish 顺序一致，或者我们可以直接用 updatedDish
+            // 为了安全，我们用 id 匹配
+            const index = newDishes.findIndex(d => d.original_name === dish.original_name); 
+            if (index !== -1) {
+              newDishes[index] = updatedDish;
+            }
+            return newDishes;
+          });
+        }
+      } catch (e) {
+        console.warn(`Failed to load image for ${dish.english_name}`, e);
+      }
     }
   };
 

@@ -24,9 +24,17 @@ export default function MenuCard({ dish, onClick }) {
 
       {/* 菜品信息 */}
       <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-bold text-xl text-gray-800 mb-1 leading-tight group-hover:text-indigo-600 transition-colors">
-          {dish.english_name}
-        </h3>
+        <div className="flex justify-between items-start mb-1">
+          <h3 className="font-bold text-xl text-gray-800 leading-tight group-hover:text-indigo-600 transition-colors flex-1 mr-2">
+            {dish.english_name}
+          </h3>
+          {/* Price Tag */}
+          {dish.price && (
+            <span className="shrink-0 bg-green-50 text-green-700 px-2 py-1 rounded text-sm font-bold border border-green-100">
+              {dish.currency} {dish.price}
+            </span>
+          )}
+        </div>
         <p className="text-gray-500 text-sm font-medium mb-4">{dish.original_name}</p>
 
         {/* 口味标签 */}
