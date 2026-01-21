@@ -1,104 +1,48 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
+import DishImage from './DishImage';
 
-export default function MenuCard({ dish }) {
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
-  const imgRef = useRef(null);
-
-  const handleImageLoad = () => {
-    setImageLoading(false);
-    setImageError(false);
-  };
-
-  const handleImageError = () => {
-    // 如果直接加载失败，尝试使用代理
-    const img = imgRef.current;
-    if (img && dish.image_url && !img.src.includes('/api/proxy-image')) {
-      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(dish.image_url)}`;
-      img.src = proxyUrl;
-      img.onerror = () => {
-        // 代理也失败了，显示占位图
-        setImageError(true);
-        setImageLoading(false);
-      };
-    } else {
-      // 代理也失败了，显示占位图
-      setImageError(true);
-      setImageLoading(false);
-    }
-  };
-
-  const hasImage = dish.image_url && !imageError;
-
+export default function MenuCard({ dish, onClick }) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+    <div 
+      onClick={onClick}
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group h-full flex flex-col"
+    >
       {/* 菜品图片 */}
-      <div className="relative w-full h-48 bg-gray-200 overflow-hidden">
-        {hasImage ? (
-          <>
-            {imageLoading && (
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 animate-pulse flex items-center justify-center">
-                <span className="text-gray-600 font-semibold">Loading...</span>
-              </div>
-            )}
-            <img
-              ref={imgRef}
-              src={dish.image_url}
-              alt={dish.english_name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-            />
-          </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
-            <svg
-              className="w-12 h-12 text-gray-600 mb-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span className="text-gray-600 font-semibold text-sm">No image</span>
-          </div>
-        )}
+      <div className="h-56 w-full overflow-hidden relative">
+        <DishImage 
+          url={dish.image_url} 
+          alt={dish.english_name}
+          className="h-full w-full"
+        />
+        {/* Hover overlay hint */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+          <span className="opacity-0 group-hover:opacity-100 text-white font-semibold bg-black/50 px-3 py-1 rounded-full text-sm transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            View Details
+          </span>
+        </div>
       </div>
 
       {/* 菜品信息 */}
-      <div className="p-4">
-        {/* 名称 */}
-        <h3 className="font-bold text-lg text-gray-800 mb-1">
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="font-bold text-xl text-gray-800 mb-1 leading-tight group-hover:text-indigo-600 transition-colors">
           {dish.english_name}
         </h3>
-        <p className="text-gray-600 text-sm mb-3 font-medium">{dish.original_name}</p>
-
-        {/* 描述 */}
-        <p className="text-gray-700 text-sm mb-4 leading-relaxed line-clamp-3">
-          {dish.description}
-        </p>
+        <p className="text-gray-500 text-sm font-medium mb-4">{dish.original_name}</p>
 
         {/* 口味标签 */}
-        <div className="flex flex-wrap gap-2">
-          {dish.flavor_tags && dish.flavor_tags.map((tag) => (
+        <div className="mt-auto flex flex-wrap gap-2">
+          {dish.flavor_tags && dish.flavor_tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="inline-block bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium hover:bg-indigo-200 transition"
+              className="inline-block bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md text-xs font-medium"
             >
               {tag}
             </span>
           ))}
+          {dish.flavor_tags && dish.flavor_tags.length > 3 && (
+            <span className="text-xs text-gray-400 py-1 pl-1">+{dish.flavor_tags.length - 3}</span>
+          )}
         </div>
-
-        {/* 搜索词 */}
-        <p className="text-xs text-gray-500 mt-3 pt-3 border-t">
-          Search: {dish.search_term}
-        </p>
       </div>
     </div>
   );

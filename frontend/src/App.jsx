@@ -3,6 +3,7 @@ import MenuUpload from './components/MenuUpload';
 import MenuGrid from './components/MenuGrid';
 import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
+import DishDetailSidebar from './components/DishDetailSidebar';
 import { analyzeMenu } from './api/client';
 import './index.css';
 
@@ -11,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState('upload'); // 'upload' | 'analyzing' | 'searching' | 'done'
   const [error, setError] = useState(null);
+  const [selectedDish, setSelectedDish] = useState(null);
 
   const handleUpload = async (file) => {
     setError(null);
@@ -46,46 +48,63 @@ function App() {
     setDishes([]);
     setStep('upload');
     setError(null);
+    setSelectedDish(null);
   };
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gray-50 selection:bg-indigo-100 selection:text-indigo-700 font-sans">
+        <DishDetailSidebar 
+            dish={selectedDish} 
+            onClose={() => setSelectedDish(null)} 
+        />
+
         {/* 页头 */}
-        <header className="bg-white shadow-sm sticky top-0 z-10">
+        <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30 transition-all duration-300">
           <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🍜</span>
-              <h1 className="text-3xl font-bold text-indigo-600">MenuGen</h1>
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleReset}>
+              <span className="text-3xl transform group-hover:scale-110 transition-transform">🍜</span>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">MenuGen</h1>
             </div>
+            
+            {/* 显示当前状态的小徽章 (可选) */}
             {step === 'done' && (
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
-              >
-                Upload Another Menu
-              </button>
+               <div className="hidden md:block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide rounded-full">
+                 Analysis Complete
+               </div>
             )}
           </div>
         </header>
 
         {/* 主内容 */}
-        <main className="max-w-6xl mx-auto px-4 py-8 min-h-96">
+        <main className="max-w-6xl mx-auto px-4 py-8 min-h-[80vh]">
           {error && (
-            <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
-              <p className="font-semibold">Error</p>
-              <p className="text-sm mt-1">{error}</p>
+            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg shadow-sm flex items-start animate-fade-in">
+              <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div>
+                <p className="font-semibold">Error Occurred</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
             </div>
           )}
 
           {step === 'upload' && <MenuUpload onUpload={handleUpload} disabled={loading} />}
           {(step === 'analyzing' || step === 'searching') && <LoadingState step={step} />}
-          {step === 'done' && <MenuGrid dishes={dishes} onReset={handleReset} />}
+          {step === 'done' && (
+            <MenuGrid 
+                dishes={dishes} 
+                onReset={handleReset} 
+                onDishClick={setSelectedDish}
+            />
+          )}
         </main>
 
         {/* 页脚 */}
-        <footer className="mt-12 py-6 bg-gray-800 text-white text-center">
-          <p>MenuGen © 2026 | Powered by Gemini & Google Search</p>
+        <footer className="mt-auto py-8 bg-white border-t border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <p className="text-gray-400 text-sm">MenuGen © 2026</p>
+            <p className="text-gray-300 text-xs mt-1">Powered by Gemini & Google Search</p>
+          </div>
         </footer>
       </div>
     </ErrorBoundary>
