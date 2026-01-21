@@ -23,6 +23,11 @@ REFERERS = [
     "https://www.baidu.com/",
 ]
 
+# CDN 代理列表（当直接获取失败时尝试）
+CDN_PROXIES = [
+    "https://images.weserv.nl/?url=",
+]
+
 
 class ImageProxy:
     """图片代理 - 通过后端获取图片，绕过前端 CORS 限制"""
@@ -118,7 +123,33 @@ class ImageProxy:
                     await asyncio.sleep(0.5 * (attempt + 1))
                     continue
         
-        logger.warning(f"❌ Failed to proxy image after {retry} attempts: {last_error} - {image_url[:50]}...")
+        # 如果重试多次都失败，尝试使用 CDN
+        logger.warning(f"⚠️ Direct proxy failed after {retry} attempts, trying CDN fallback: {image_url[:50]}...")
+        
+        for cdn_base in CDN_PROXIES:
+            try:
+                # 移除 http:// 或 https:// 前缀，因为 weserv 有时处理不好双重协议头，或者直接拼接
+                # weserv 文档建议：?url=example.com/image.jpg (without protocol) OR ?url=https://...
+                # 这里直接拼接通常没问题: https://images.weserv.nl/?url=https://example.com/image.jpg
+                cdn_url = f"{cdn_base}{image_url}"
+                
+                logger.info(f"🔄 Trying CDN fallback: {cdn_url[:60]}...")
+                
+                timeout_obj = aiohttp.ClientTimeout(total=timeout)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(cdn_url, timeout=timeout_obj) as resp:
+                        if resp.status == 200:
+                            content_type = resp.headers.get('content-type', 'image/jpeg')
+                            image_data = await resp.read()
+                            
+                            if image_data:
+                                logger.info(f"✅ CDN Proxy success: {len(image_data)} bytes via {cdn_base}")
+                                return (image_data, content_type)
+            except Exception as e:
+                logger.debug(f"⚠️ CDN fallback failed ({cdn_base}): {str(e)}")
+                continue
+
+        logger.warning(f"❌ All proxy attempts (Direct + CDN) failed: {last_error} - {image_url[:50]}...")
         return None
     
     @staticmethod
