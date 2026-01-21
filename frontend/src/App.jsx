@@ -48,9 +48,11 @@ function App() {
   };
 
   const loadImagesForDishes = async (initialDishes) => {
-    // 逐个加载图片，避免阻塞
-    for (let i = 0; i < initialDishes.length; i++) {
-      const dish = initialDishes[i];
+    // 并发控制：同时最多 3 个请求
+    const CONCURRENT_LIMIT = 3;
+    let index = 0;
+
+    const fetchImage = async (dish) => {
       try {
         const res = await searchDishImage(dish);
         if (res.data.success && res.data.dishes && res.data.dishes.length > 0) {
@@ -58,13 +60,9 @@ function App() {
           
           setDishes(currentDishes => {
             const newDishes = [...currentDishes];
-            // 找到对应的 dish 并更新
-            // 假设按顺序或者用 ID (如果后端没返回 ID，我们可以用 index)
-            // 这里我们假设后端返回的 dish 顺序一致，或者我们可以直接用 updatedDish
-            // 为了安全，我们用 id 匹配
-            const index = newDishes.findIndex(d => d.original_name === dish.original_name); 
-            if (index !== -1) {
-              newDishes[index] = updatedDish;
+            const idx = newDishes.findIndex(d => d.original_name === dish.original_name); 
+            if (idx !== -1) {
+              newDishes[idx] = updatedDish;
             }
             return newDishes;
           });
@@ -72,7 +70,38 @@ function App() {
       } catch (e) {
         console.warn(`Failed to load image for ${dish.english_name}`, e);
       }
-    }
+    };
+
+    // 简单的并发执行器
+    const runBatch = async () => {
+      const promises = [];
+      while (index < initialDishes.length) {
+        const dish = initialDishes[index++];
+        const p = fetchImage(dish);
+        promises.push(p);
+        
+        if (promises.length >= CONCURRENT_LIMIT) {
+          await Promise.race(promises);
+          // 移除已完成的 promise (简化逻辑: 这里其实只是简单启动，更严谨的 pool 需要复杂逻辑，
+          // 但对于 React 简单的 useEffect 场景，直接分批或者 map + limit 库更好。
+          // 为了不引入新库，我们用简单的递归或者分块。)
+        }
+      }
+      await Promise.all(promises);
+    };
+
+    // 更好的并发实现：递归
+    const queue = [...initialDishes];
+    const workers = Array(Math.min(CONCURRENT_LIMIT, queue.length))
+      .fill(null)
+      .map(async () => {
+        while (queue.length > 0) {
+          const dish = queue.shift();
+          await fetchImage(dish);
+        }
+      });
+      
+    await Promise.all(workers);
   };
 
   const handleReset = () => {
@@ -131,27 +160,8 @@ function App() {
             )}
             
             {step === 'done' && (
-              <div className="animate-fade-in">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
-                    {dishes.map((dish, index) => (
-                      <div key={dish.id || index} style={{animationDelay: `${index * 50}ms`}} className="animate-slide-in opacity-0 fill-mode-forwards">
-                          {/* Import MenuCard directly here or use the existing component but we need to pass onClick */}
-                          {/* We are reusing MenuGrid internal logic but let's just map MenuCard directly for better control if needed, 
-                              BUT for now let's use MenuGrid but customized via CSS/wrapper 
-                              Actually, App.jsx was using MenuGrid. Let's keep it simple and just use MenuGrid logic here to avoid rewriting MenuGrid entirely if not needed.
-                              Wait, MenuGrid has headers we might not want. Let's just import MenuCard directly to build the grid manually here for perfect control.
-                          */}
-                      </div>
-                    ))}
-                    {/* Wait, let's just use MenuGrid but maybe remove its header? 
-                        Or better, let's use MenuGrid but pass a flag or just accept its header is ok. 
-                        Actually MenuGrid has a "Upload Another" button which is now redundant.
-                        Let's quick-fix MenuGrid to be cleaner.
-                    */}
-                    <div className="w-full">
-                       <MenuGrid dishes={dishes} onReset={()=>{}} onDishClick={setSelectedDish} />
-                    </div>
-                  </div>
+              <div className="animate-fade-in w-full">
+                 <MenuGrid dishes={dishes} onReset={()=>{}} onDishClick={setSelectedDish} />
               </div>
             )}
           </div>
