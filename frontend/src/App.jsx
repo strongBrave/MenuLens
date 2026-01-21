@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import MenuUpload from './components/MenuUpload';
+import Sidebar from './components/Sidebar';
 import MenuGrid from './components/MenuGrid';
 import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import DishDetailSidebar from './components/DishDetailSidebar';
+import EmptyState from './components/EmptyState';
 import { analyzeMenu } from './api/client';
 import './index.css';
 
@@ -20,14 +21,11 @@ function App() {
     setStep('analyzing');
 
     try {
-      // 调用后端 API
       const response = await analyzeMenu(file);
 
       if (response.data.success) {
         setStep('searching');
-        // 模拟搜索延迟以改善 UX
         await new Promise(r => setTimeout(r, 500));
-
         setDishes(response.data.dishes || []);
         setStep('done');
       } else {
@@ -53,59 +51,78 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50 selection:bg-indigo-100 selection:text-indigo-700 font-sans">
+      <div className="flex h-screen w-screen overflow-hidden bg-slate-100 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
+        
+        {/* Detail Drawer (Fixed Overlay) */}
         <DishDetailSidebar 
             dish={selectedDish} 
             onClose={() => setSelectedDish(null)} 
         />
 
-        {/* 页头 */}
-        <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30 transition-all duration-300">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleReset}>
-              <span className="text-3xl transform group-hover:scale-110 transition-transform">🍜</span>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">MenuGen</h1>
-            </div>
+        {/* Left Sidebar (Control Center) */}
+        <Sidebar 
+           onUpload={handleUpload} 
+           isLoading={loading}
+           onReset={handleReset}
+           hasResults={dishes.length > 0}
+        />
+
+        {/* Right Main Content (Scrollable Gallery) */}
+        <main className="flex-1 relative h-full overflow-y-auto overflow-x-hidden bg-white">
+          
+          {/* Top Bar (Mobile/Status) - Optional */}
+          {dishes.length > 0 && (
+             <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-8 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-slate-800">Results Gallery</h2>
+                <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {dishes.length} Dishes Found
+                </span>
+             </div>
+          )}
+
+          <div className="p-8 pb-20 min-h-full">
+            {error && (
+              <div className="max-w-2xl mx-auto mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-xl flex items-center gap-3 animate-fade-in">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span className="font-medium">{error}</span>
+              </div>
+            )}
+
+            {/* Content Switcher */}
+            {step === 'upload' && <EmptyState />}
             
-            {/* 显示当前状态的小徽章 (可选) */}
-            {step === 'done' && (
-               <div className="hidden md:block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide rounded-full">
-                 Analysis Complete
+            {(step === 'analyzing' || step === 'searching') && (
+               <div className="h-full flex flex-col items-center justify-center -mt-20">
+                  <LoadingState step={step} />
                </div>
             )}
-          </div>
-        </header>
-
-        {/* 主内容 */}
-        <main className="max-w-6xl mx-auto px-4 py-8 min-h-[80vh]">
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg shadow-sm flex items-start animate-fade-in">
-              <svg className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <div>
-                <p className="font-semibold">Error Occurred</p>
-                <p className="text-sm mt-1">{error}</p>
+            
+            {step === 'done' && (
+              <div className="animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+                    {dishes.map((dish, index) => (
+                      <div key={dish.id || index} style={{animationDelay: `${index * 50}ms`}} className="animate-slide-in opacity-0 fill-mode-forwards">
+                          {/* Import MenuCard directly here or use the existing component but we need to pass onClick */}
+                          {/* We are reusing MenuGrid internal logic but let's just map MenuCard directly for better control if needed, 
+                              BUT for now let's use MenuGrid but customized via CSS/wrapper 
+                              Actually, App.jsx was using MenuGrid. Let's keep it simple and just use MenuGrid logic here to avoid rewriting MenuGrid entirely if not needed.
+                              Wait, MenuGrid has headers we might not want. Let's just import MenuCard directly to build the grid manually here for perfect control.
+                          */}
+                      </div>
+                    ))}
+                    {/* Wait, let's just use MenuGrid but maybe remove its header? 
+                        Or better, let's use MenuGrid but pass a flag or just accept its header is ok. 
+                        Actually MenuGrid has a "Upload Another" button which is now redundant.
+                        Let's quick-fix MenuGrid to be cleaner.
+                    */}
+                    <div className="w-full">
+                       <MenuGrid dishes={dishes} onReset={()=>{}} onDishClick={setSelectedDish} />
+                    </div>
+                  </div>
               </div>
-            </div>
-          )}
-
-          {step === 'upload' && <MenuUpload onUpload={handleUpload} disabled={loading} />}
-          {(step === 'analyzing' || step === 'searching') && <LoadingState step={step} />}
-          {step === 'done' && (
-            <MenuGrid 
-                dishes={dishes} 
-                onReset={handleReset} 
-                onDishClick={setSelectedDish}
-            />
-          )}
-        </main>
-
-        {/* 页脚 */}
-        <footer className="mt-auto py-8 bg-white border-t border-gray-100">
-          <div className="max-w-6xl mx-auto px-4 text-center">
-            <p className="text-gray-400 text-sm">MenuGen © 2026</p>
-            <p className="text-gray-300 text-xs mt-1">Powered by Gemini & Google Search</p>
+            )}
           </div>
-        </footer>
+        </main>
       </div>
     </ErrorBoundary>
   );
