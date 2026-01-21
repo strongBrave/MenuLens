@@ -37,25 +37,23 @@ class HybridImagePipeline:
         self.verifier = image_verifier
         self.generator = image_generator
     
-    async def get_best_image(self, dish: Dish) -> Optional[str]:
+    async def get_best_images(self, dish: Dish) -> List[str]:
         """
-        获取菜品的最佳图片
+        获取菜品的最佳图片列表（按相关性排序）
         
         执行流程：
-        1. 搜索 Top 3 图片
+        1. 搜索 Top N 图片
         2. 检查 URL 有效性
-        3. 视觉验证（Gating）
-        4. 验证失败 → 降级为生成
+        3. 视觉验证并打分
+        4. 按分数排序返回 Top 3
+        5. 如果验证失败且允许生成，则返回生成图片的列表
         
-        Args:
-            dish: 菜品对象
-            
         Returns:
-            图片 URL（搜索或生成）
+            图片 URL 列表
         """
         if not settings.ENABLE_RAG_PIPELINE:
             logger.info(f"RAG Pipeline disabled, using legacy search for {dish.english_name}")
-            return None
+            return []
         
         start_time = time.time()
         logger.info(f"🔍 Pipeline START for {dish.english_name}")
@@ -67,25 +65,78 @@ class HybridImagePipeline:
         
         if not candidate_urls:
             logger.warning(f"⚠️  No search results for {dish.english_name} ({search_time:.1f}s), skipping to generation")
-            return await self._generate_image(dish)
+            gen_img = await self._generate_image(dish)
+            return [gen_img] if gen_img else []
         
         logger.info(f"📋 Found {len(candidate_urls)} candidates ({search_time:.1f}s)")
         
-        # Step 2: 验证候选图片
+        # Step 2: 验证并排序候选图片
         verify_start = time.time()
-        best_image_url = await self._verify_and_select(dish, candidate_urls)
+        sorted_urls = await self._verify_and_sort(dish, candidate_urls)
         verify_time = time.time() - verify_start
         
-        if best_image_url:
+        if sorted_urls:
             total_time = time.time() - start_time
-            logger.info(f"✅ Using search result ({verify_time:.1f}s verification, {total_time:.1f}s total)")
-            return best_image_url
+            logger.info(f"✅ Found {len(sorted_urls)} verified images ({verify_time:.1f}s verification, {total_time:.1f}s total) for {dish.english_name}")
+            return sorted_urls
         
         # Step 3: 验证失败，降级为生成
         logger.warning(f"⚠️  No valid search result (Score < {settings.IMAGE_VERIFY_SCORE_THRESHOLD}), "
                       f"generating image ({verify_time:.1f}s verification)")
-        return await self._generate_image(dish)
-    
+        gen_img = await self._generate_image(dish)
+        return [gen_img] if gen_img else []
+
+    async def _verify_and_sort(
+        self,
+        dish: Dish,
+        candidate_urls: List[str]
+    ) -> List[str]:
+        """
+        视觉验证并按相关性分数排序图片
+        """
+        if not candidate_urls:
+            return []
+        
+        # 只有 1 个结果时跳过复杂验证（太慢），直接返回
+        if len(candidate_urls) < 2:
+            return candidate_urls
+
+        logger.info(f"🔎 Verifying {len(candidate_urls)} images...")
+        
+        # 并发验证所有候选图片
+        verification_tasks = [
+            self.verifier.verify_image_relevance(
+                dish_name=dish.english_name,
+                description=dish.description,
+                image_url=url,
+                original_name=dish.original_name
+            )
+            for url in candidate_urls
+        ]
+        
+        scores = await asyncio.gather(*verification_tasks, return_exceptions=True)
+        
+        # 配对 URL 和分数
+        valid_scored_urls = []
+        for url, score in zip(candidate_urls, scores):
+            if isinstance(score, (int, float)):
+                # 记录分数日志
+                logger.debug(f"  {dish.english_name}: {score:.2f} - {url[:50]}...")
+                # 即使分数低也先保留，按分数排序（除非非常离谱，这里我们信任 search 的基本相关性）
+                # 或者我们可以设置一个硬阈值过滤
+                if score >= 0.4: # 稍微放宽一点阈值，保证有结果返回，排序靠前的肯定是好的
+                    valid_scored_urls.append((url, score))
+        
+        if not valid_scored_urls:
+            return []
+        
+        # 按分数降序排序
+        valid_scored_urls.sort(key=lambda x: x[1], reverse=True)
+        
+        # 返回排序后的 URL 列表
+        return [url for url, _ in valid_scored_urls]
+
+    # ... (Keep existing methods: _search_candidates, _check_urls_alive, _generate_image)
     async def _search_candidates(self, dish: Dish) -> List[str]:
         """搜索前 N 个候选图片"""
         try:
@@ -102,7 +153,7 @@ class HybridImagePipeline:
             valid_urls = await self._check_urls_alive(urls)
             extracted_num = min(len(valid_urls), settings.SEARCH_CANDIDATE_RESULTS)
             valid_urls = valid_urls[:extracted_num]
-            logger.info(f"URL validity check: {len(valid_urls)}/{len(urls)} alive")
+            logger.info(f"URL validity check: {len(valid_urls)}/{len(urls)} alive for {dish.english_name}")
             
             return valid_urls
             
@@ -160,63 +211,7 @@ class HybridImagePipeline:
         # 过滤有效的 URL
         valid_urls = [url for url in results if isinstance(url, str)]
         return valid_urls
-    
-    async def _verify_and_select(
-        self,
-        dish: Dish,
-        candidate_urls: List[str]
-    ) -> Optional[str]:
-        """
-        视觉验证并选择最佳图片
-        
-        这是 RAG Pipeline 的核心：使用 Gating Agent 验证相关性
-        """
-        if not candidate_urls:
-            logger.debug(f"No candidate URLs for {dish.english_name}")
-            return None
-        
-        # 快速过滤：如果只有 1 个候选且验证失败会很浪费时间
-        # 如果候选数量很少，使用更严格的标准
-        if len(candidate_urls) < 2:
-            logger.info(f"⚠️  Only {len(candidate_urls)} candidate, skipping verification (too risky)")
-            return None
-        
-        logger.info(f"🔎 Verifying {len(candidate_urls)} images...")
-        
-        # 并发验证所有候选图片
-        verification_tasks = [
-            self.verifier.verify_image_relevance(
-                dish_name=dish.english_name,
-                description=dish.description,
-                image_url=url,
-                original_name=dish.original_name
-            )
-            for url in candidate_urls
-        ]
-        
-        scores = await asyncio.gather(*verification_tasks, return_exceptions=True)
-        
-        # 配对 URL 和分数
-        url_scores = []
-        for url, score in zip(candidate_urls, scores):
-            if isinstance(score, float):
-                url_scores.append((url, score))
-                logger.debug(f"  {dish.english_name}: {score:.2f} - {url[:50]}...")
-        
-        if not url_scores:
-            return None
-        
-        # 选择最高分的图片
-        best_url, best_score = max(url_scores, key=lambda x: x[1])
-        
-        # 检查是否超过阈值
-        if best_score >= settings.IMAGE_VERIFY_SCORE_THRESHOLD:
-            logger.info(f"✓ Best match: {best_score:.2f} >= {settings.IMAGE_VERIFY_SCORE_THRESHOLD}")
-            return best_url
-        else:
-            logger.warning(f"✗ Best score {best_score:.2f} < threshold {settings.IMAGE_VERIFY_SCORE_THRESHOLD}")
-            return None
-    
+
     async def _generate_image(self, dish: Dish) -> Optional[str]:
         """降级：生成图片"""
         if not settings.ENABLE_IMAGE_GENERATION:
@@ -240,7 +235,7 @@ class HybridImagePipeline:
         except Exception as e:
             logger.error(f"Error generating image: {str(e)}")
             return None
-    
+
     async def enrich_dishes_with_images(self, dishes: List[Dish]) -> List[Dish]:
         """
         为菜品列表并发获取最佳图片（使用混合 Pipeline）
@@ -249,22 +244,23 @@ class HybridImagePipeline:
             dishes: 菜品列表
             
         Returns:
-            带有图片的菜品列表
+            带有图片列表的菜品列表
         """
         logger.info(f"🚀 Hybrid Pipeline processing {len(dishes)} dishes...")
         
         # 并发处理所有菜品
-        tasks = [self.get_best_image(dish) for dish in dishes]
+        tasks = [self.get_best_images(dish) for dish in dishes]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         # 更新菜品图片
         success_count = 0
-        for dish, image_url in zip(dishes, results):
-            if isinstance(image_url, str) and image_url:
-                dish.image_url = image_url
+        for dish, image_urls in zip(dishes, results):
+            if isinstance(image_urls, list) and image_urls:
+                dish.image_urls = image_urls
+                dish.image_url = image_urls[0] # 设置最佳图片为主图
                 success_count += 1
-            elif isinstance(image_url, Exception):
-                logger.warning(f"Exception for {dish.english_name}: {image_url}")
+            elif isinstance(image_urls, Exception):
+                logger.warning(f"Exception for {dish.english_name}: {image_urls}")
         
         logger.info(f"✅ Pipeline completed: {success_count}/{len(dishes)} dishes got images")
         return dishes
