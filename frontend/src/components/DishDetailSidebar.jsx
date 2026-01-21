@@ -56,7 +56,7 @@ export default function DishDetailSidebar({ dish, onClose }) {
       />
 
       {/* Sidebar Panel */}
-      <div className="relative w-full md:w-[480px] h-full bg-white shadow-2xl overflow-y-auto animate-slide-in">
+      <div className="relative w-full md:w-[600px] lg:w-[700px] h-full bg-white shadow-2xl overflow-y-auto animate-slide-in flex flex-col">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -69,32 +69,42 @@ export default function DishDetailSidebar({ dish, onClose }) {
         </button>
 
         {/* Hero Image */}
-        <div className="h-72 w-full relative group bg-gray-100">
+        <div className="relative w-full h-[400px] md:h-[500px] shrink-0 bg-gray-100 group">
           <DishImage 
             url={getCurrentImageUrl()} 
             alt={dish.english_name} 
-            className="w-full h-full"
+            className="w-full h-full object-cover"
           />
           
-          {/* Switch Image Button */}
-          {dish.image_urls && dish.image_urls.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNextImage();
-              }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-indigo-600 p-2.5 rounded-full shadow-xl transition-all transform hover:scale-110 border border-indigo-100 flex items-center justify-center"
-              title="Next Image"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          )}
+          {/* Image Controls Container */}
+          <div className="absolute bottom-4 left-0 right-0 px-6 flex justify-between items-end pointer-events-none">
+             {/* Image Counter */}
+             {dish.image_urls && dish.image_urls.length > 1 && (
+               <div className="bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold tracking-wider shadow-sm pointer-events-auto">
+                 {currentImageIndex + 1} / {dish.image_urls.length}
+               </div>
+             )}
+
+             {/* Switch Image Button */}
+             {dish.image_urls && dish.image_urls.length > 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextImage();
+                  }}
+                  className="bg-white/90 hover:bg-white text-indigo-600 p-3 rounded-full shadow-xl transition-all transform hover:scale-110 border border-indigo-100 flex items-center justify-center pointer-events-auto"
+                  title="Next Image"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+             )}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-8 md:p-10 flex-1">
           <div className="flex justify-between items-start mb-2">
             <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-4 leading-tight">
               {dish.english_name}
