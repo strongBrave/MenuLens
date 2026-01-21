@@ -66,6 +66,14 @@ function App() {
             }
             return newDishes;
           });
+
+          // 如果当前选中的菜品就是正在更新的这个，也需要同步更新 selectedDish
+          setSelectedDish(currentSelected => {
+            if (currentSelected && currentSelected.original_name === dish.original_name) {
+              return updatedDish;
+            }
+            return currentSelected;
+          });
         }
       } catch (e) {
         console.warn(`Failed to load image for ${dish.english_name}`, e);
