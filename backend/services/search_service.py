@@ -85,56 +85,48 @@ class GoogleSearcher:
     
     async def enrich_dishes_with_images(self, dishes: List[Dish]) -> List[Dish]:
         """
-        为菜品列表搜索图片（传统模式，单结果）
-        
-        此方法保留向后兼容性。新代码应使用 hybrid_pipeline。
+        为菜品列表搜索图片（增强模式，多结果）
         
         Args:
             dishes: 菜品列表
             
         Returns:
-            带有图片 URL 的菜品列表
+            带有图片 URL 列表的菜品列表
         """
         semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_SEARCHES)
         
         async with aiohttp.ClientSession() as session:
             tasks = [
-                self._search_single_image(session, dish, semaphore)
+                self._search_dish_images(session, dish, semaphore)
                 for dish in dishes
             ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # 等待所有搜索完成
+            await asyncio.gather(*tasks, return_exceptions=True)
         
-        # 处理结果
-        success_count = 0
-        for dish, result in zip(dishes, results):
-            if isinstance(result, str):
-                dish.image_url = result
-                success_count += 1
-            elif isinstance(result, Exception):
-                logger.warning(f"Failed to search for {dish.english_name}: {result}")
-        
+        # 统计结果
+        success_count = sum(1 for d in dishes if d.image_urls)
         logger.info(f"Image search completed: {success_count}/{len(dishes)} dishes got images")
         return dishes
     
-    async def _search_single_image(
+    async def _search_dish_images(
         self,
         session: aiohttp.ClientSession,
         dish: Dish,
         semaphore: asyncio.Semaphore
-    ) -> Optional[str]:
-        """搜索单个菜品的图片（返回第一个有效结果）"""
+    ) -> None:
+        """搜索单个菜品的多张图片并填充到 dish 对象"""
         async with semaphore:
             try:
+                # 搜索 Top 3 图片
                 urls = await self.search_images(dish.search_term, num=3)
                 
                 if urls:
-                    return urls[0]
-                
-                return None
+                    dish.image_urls = urls
+                    dish.image_url = urls[0]  # 向下兼容
             
             except Exception as e:
                 logger.error(f"Error searching for {dish.english_name}: {str(e)}")
-                return None
+                # 出错时保留空列表
 
 
 # 全局实例

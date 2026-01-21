@@ -11,7 +11,11 @@ class Dish(BaseModel):
     description: str = Field(..., max_length=500, description="菜品描述")
     flavor_tags: List[str] = Field(..., max_items=5, description="口味标签")
     search_term: str = Field(..., description="搜索词，格式: {EN} {ZH} food dish")
-    image_url: Optional[str] = Field(None, description="菜品图片URL")
+    image_url: Optional[str] = Field(None, description="主要图片URL（向下兼容）")
+    image_urls: List[str] = Field(default_factory=list, description="备选图片URL列表")
+    price: Optional[str] = Field(None, description="价格（数字部分）")
+    currency: Optional[str] = Field(None, description="货币符号（如 JPY, THB, USD）")
+    language_code: Optional[str] = Field("en", description="原文语言代码（如 ja, th, fr）")
 
     class Config:
         json_schema_extra = {
@@ -21,7 +25,11 @@ class Dish(BaseModel):
                 "description": "Stir-fried chicken with peanuts and dried chilies",
                 "flavor_tags": ["spicy", "savory", "nutty"],
                 "search_term": "Kung Pao Chicken 宫保鸡丁 food dish",
-                "image_url": None
+                "image_url": "https://example.com/kungpao.jpg",
+                "image_urls": ["https://example.com/kungpao.jpg", "https://example.com/kungpao2.jpg"],
+                "price": "58",
+                "currency": "CNY",
+                "language_code": "zh"
             }
         }
 

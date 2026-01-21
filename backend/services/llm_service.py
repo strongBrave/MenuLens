@@ -82,7 +82,10 @@ class GeminiAnalyzer:
                     english_name=item["english_name"],
                     description=description,
                     flavor_tags=item.get("flavor_tags", [])[:5],
-                    search_term=f"{item['english_name']} {item['original_name']} food dish"
+                    search_term=f"{item['english_name']} {item['original_name']} food dish",
+                    price=item.get("price"),
+                    currency=item.get("currency"),
+                    language_code=item.get("language_code", "en")
                 )
                 dishes.append(dish)
             
@@ -107,7 +110,10 @@ class GeminiAnalyzer:
       "original_name": "菜品原名（中文或本地语言）",
       "english_name": "英文翻译或通用名称",
       "description": "详细描述，包括主要材料、烹饪方式和口感特点",
-      "flavor_tags": ["tag1", "tag2", "tag3"]
+      "flavor_tags": ["tag1", "tag2", "tag3"],
+      "price": "价格数字（不含符号）",
+      "currency": "货币符号（如 USD, JPY, CNY, THB）",
+      "language_code": "原文语言代码（ISO 639-1，如 ja, th, zh, fr）"
     }
   ]
 }
@@ -118,7 +124,8 @@ class GeminiAnalyzer:
 3. flavor_tags 最多 5 个，使用英文（如: spicy, sweet, savory, nutty, sour, bitter, umami, fresh 等）
 4. 返回必须是有效的 JSON，没有任何额外的文本或标记
 5. 菜品名称要准确，优先保留原始名称
-6. 如果图片不是菜单或无法识别菜品，返回空的 dishes 数组"""
+6. 如果有价格，必须提取。如果图片中没有货币符号，根据图片上的文字推断（如日文一般是 JPY，泰文是 THB），无法推断则留空。
+7. 如果图片不是菜单或无法识别菜品，返回空的 dishes 数组"""
     
     def _parse_json_response(self, content: str) -> dict:
         """解析 JSON 响应"""

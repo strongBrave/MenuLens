@@ -150,6 +150,71 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@app.post("/api/analyze-text-only", response_model=MenuResponse)
+async def analyze_text_only(file: UploadFile = File(...)) -> MenuResponse:
+    """
+    第一阶段：仅分析文本（快速响应）
+    用于乐观 UI 更新，只运行 Gemini 识别，不进行图片搜索
+    """
+    try:
+        if not file.content_type.startswith("image/"):
+            raise ValueError("File must be an image")
+        
+        contents = await file.read()
+        is_valid, error_msg = validate_image(contents)
+        if not is_valid:
+            raise ValueError(error_msg)
+        
+        base64_image = encode_image_to_base64(contents)
+        
+        logger.info(f"🔍 Analyzing text only from file: {file.filename}")
+        dishes = await gemini_analyzer.analyze_menu_image(base64_image)
+        
+        return MenuResponse(
+            success=True,
+            dishes=dishes,
+            metadata={
+                "total_dishes": len(dishes),
+                "filename": file.filename,
+                "mode": "text_only"
+            }
+        )
+    except ValueError as e:
+        logger.error(f"❌ Validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"❌ Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.post("/api/search-dish-image", response_model=MenuResponse)
+async def search_dish_image(dish: Dish) -> MenuResponse:
+    """
+    第二阶段：为单个菜品搜索图片（异步加载）
+    用于前端在收到 text-only 结果后，单独为每个菜品发起搜索
+    """
+    try:
+        logger.info(f"🔍 Searching images for dish: {dish.english_name}")
+        
+        # 复用 Search Service
+        # 注意：这里我们只搜这一个菜，所以包装成 list
+        enriched_dishes = await google_searcher.enrich_dishes_with_images([dish])
+        
+        return MenuResponse(
+            success=True,
+            dishes=enriched_dishes,
+            metadata={"mode": "single_dish_search"}
+        )
+    except Exception as e:
+        logger.error(f"❌ Search error: {str(e)}")
+        # 即使搜索失败，也返回原 dish，避免前端崩溃
+        return MenuResponse(
+            success=True,
+            dishes=[dish],
+            metadata={"error": str(e)}
+        )
+
+
 # 开发环境下的测试端点
 @app.post("/api/test-analyze")
 async def test_analyze():
