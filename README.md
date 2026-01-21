@@ -2,8 +2,7 @@
 > **AI-Powered Visual Menu Explorer**  
 > *Turn any text menu into a visual feast with Gemini AI & RAG Search.*
 
-![MenuLens Demo](./frontend/src/assets/demo_placeholder.png)
-*(Place a screenshot of your app here)*
+![MenuLens Demo](./assets/main_page.png)
 
 ## ✨ Overview
 
