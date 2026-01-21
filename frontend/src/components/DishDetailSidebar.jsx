@@ -60,15 +60,16 @@ export default function DishDetailSidebar({ dish, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+          className="absolute top-4 right-4 z-20 p-2 bg-white/80 hover:bg-white text-gray-800 rounded-full shadow-lg backdrop-blur-sm transition-all transform hover:scale-105"
+          aria-label="Close"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
         {/* Hero Image */}
-        <div className="h-72 w-full relative group">
+        <div className="h-72 w-full relative group bg-gray-100">
           <DishImage 
             url={getCurrentImageUrl()} 
             alt={dish.english_name} 
@@ -82,11 +83,11 @@ export default function DishDetailSidebar({ dish, onClose }) {
                 e.stopPropagation();
                 handleNextImage();
               }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-indigo-600 p-2 rounded-full shadow-lg transition-all transform hover:scale-105"
+              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-indigo-600 p-2.5 rounded-full shadow-xl transition-all transform hover:scale-110 border border-indigo-100 flex items-center justify-center"
               title="Next Image"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
           )}
@@ -95,13 +96,13 @@ export default function DishDetailSidebar({ dish, onClose }) {
         {/* Content */}
         <div className="p-8">
           <div className="flex justify-between items-start mb-2">
-            <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-4">
+            <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-4 leading-tight">
               {dish.english_name}
             </h1>
             {/* Price Display */}
             {dish.price && (
-               <div className="text-right">
-                 <span className="block text-2xl font-bold text-indigo-600">
+               <div className="text-right shrink-0">
+                 <span className="block text-2xl font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg">
                    {dish.currency} {dish.price}
                  </span>
                </div>
@@ -109,17 +110,17 @@ export default function DishDetailSidebar({ dish, onClose }) {
           </div>
 
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-xl text-gray-500 font-medium">
+            <h2 className="text-xl text-gray-600 font-medium">
               {dish.original_name}
             </h2>
             {/* TTS Button */}
             <button 
               onClick={handleSpeak}
-              className="text-indigo-400 hover:text-indigo-600 transition-colors p-1 rounded-full hover:bg-indigo-50"
+              className="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors p-2 rounded-full"
               title="Speak"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
               </svg>
             </button>
           </div>

@@ -80,7 +80,7 @@ export default function Sidebar({ onUpload, isLoading, onReset, hasResults }) {
                 We'll identify dishes instantly.
               </p>
               
-              <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-sm">
+              <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-md hover:shadow-lg w-full sm:w-auto">
                 Select Image
               </button>
            </div>
