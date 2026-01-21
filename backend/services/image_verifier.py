@@ -91,15 +91,20 @@ class ImageVerifier:
             logger.warning(f"⏱️  Timeout verifying image for {dish_name} - returning 0.0")
             return 0.0
         except APIError as e:
-            # 如果是 HTML 返回或其他内容问题，这通常意味着 URL 无效
+            # 捕获 OpenAI SDK 抛出的 API 错误
             error_str = str(e).lower()
-            if 'html' in error_str or 'mime type' in error_str:
-                logger.debug(f"Invalid URL (returned HTML instead of image): {dish_name}")
+            if 'mime type' in error_str or 'text/html' in error_str or 'connection reset' in error_str or '500' in str(e):
+                logger.debug(f"Invalid image URL (API Error): {dish_name} - {str(e)[:50]}...")
             else:
                 logger.error(f"API error verifying {dish_name}: {str(e)}")
             return 0.0
         except Exception as e:
-            logger.error(f"Error verifying image for {dish_name}: {str(e)}")
+            # 捕获其他所有异常
+            error_str = str(e).lower()
+            if 'connection reset' in error_str or 'mime type' in error_str:
+                logger.debug(f"Image verification failed (Network/Format): {str(e)[:50]}...")
+            else:
+                logger.error(f"Error verifying image for {dish_name}: {str(e)}")
             return 0.0
     
     def _call_verify_api(self, dish_name: str, image_url: str, prompt: str) -> str:
@@ -138,7 +143,9 @@ class ImageVerifier:
             return response_text
             
         except Exception as e:
-            logger.error(f"API call error: {type(e).__name__}: {str(e)}")
+            # 在这里我们不抛出异常，而是记录并返回空，让外层捕获
+            # 或者直接重新抛出，让外层的 except Exception as e 捕获
+            # 为了调试清晰，我们 raise 出去
             raise
     
     async def download_image_as_base64(self, image_url: str) -> Optional[str]:

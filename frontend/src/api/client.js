@@ -38,7 +38,7 @@ export async function analyzeMenuText(imageFile) {
  */
 export async function searchDishImage(dish) {
   return apiClient.post('/api/search-dish-image', dish, {
-    timeout: 30000,
+    timeout: 240000,
   });
 }
 
