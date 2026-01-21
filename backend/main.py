@@ -196,9 +196,13 @@ async def search_dish_image(dish: Dish) -> MenuResponse:
     try:
         logger.info(f"🔍 Searching images for dish: {dish.english_name}")
         
-        # 复用 Search Service
-        # 注意：这里我们只搜这一个菜，所以包装成 list
-        enriched_dishes = await google_searcher.enrich_dishes_with_images([dish])
+        # 优先使用 RAG Pipeline
+        if settings.ENABLE_RAG_PIPELINE and _hybrid_pipeline:
+            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images([dish])
+        else:
+            # 否则使用普通搜索 (searcher 是在文件头部定义的全局实例)
+            # 注意：searcher 可能是 google_searcher 或 serp_searcher
+            enriched_dishes = await searcher.enrich_dishes_with_images([dish])
         
         return MenuResponse(
             success=True,
