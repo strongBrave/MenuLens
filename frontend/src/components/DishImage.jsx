@@ -1,15 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function DishImage({ url, alt, className }) {
+export default function DishImage({ url, urls = [], alt, className }) {
+  // 合并所有可用 URL：优先用 urls 列表，如果没有则用 url
+  const allUrls = urls && urls.length > 0 ? urls : (url ? [url] : []);
+  
+  const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef(null);
 
-  // Reset states when url changes
+  const currentUrl = allUrls[currentUrlIndex];
+
+  // 当 urls 或 url 属性本身改变时（比如父组件切图了），重置状态
+  // 注意：如果 urls 列表内容变了，也要重置
   useEffect(() => {
+    // 只有当传入的 url（作为主显图）不等于当前正在尝试的 URL 时，才重置
+    // 这允许外部控制（比如点击切换）生效，但也允许内部自动跳过生效
+    // 为了简化：每当外部 props 变了，我们重置到第一个
+    setCurrentUrlIndex(0);
     setImageLoading(true);
     setImageError(false);
-  }, [url]);
+  }, [url, urls]); // 依赖项简化，实际可能需要更深比较，但对新对象通常足够
 
   const handleImageLoad = () => {
     setImageLoading(false);
@@ -18,22 +29,30 @@ export default function DishImage({ url, alt, className }) {
 
   const handleImageError = () => {
     const img = imgRef.current;
-    if (img && url && !img.src.includes('/api/proxy-image')) {
-      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    
+    // 1. 尝试代理（如果是第一次失败且没有用过代理）
+    if (img && currentUrl && !img.src.includes('/api/proxy-image')) {
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(currentUrl)}`;
       img.src = proxyUrl;
-      // We don't attach another onerror here to avoid infinite loops if proxy fails too frequently,
-      // but in the original code:
-      img.onerror = () => {
-        setImageError(true);
-        setImageLoading(false);
-      };
+      // 这里的 onerror 会在代理也失败时触发
+      return; 
+    }
+
+    // 2. 代理也失败了（或者已经是代理链接了），尝试下一张图
+    if (currentUrlIndex < allUrls.length - 1) {
+      console.log(`Image failed: ${currentUrl}, trying next...`);
+      setCurrentUrlIndex(prev => prev + 1);
+      setImageLoading(true);
+      // setImageError 保持 false，因为我们还在尝试
     } else {
+      // 3. 所有图都试过了，彻底失败
+      console.warn(`All images failed for ${alt}`);
       setImageError(true);
       setImageLoading(false);
     }
   };
 
-  const hasImage = url && !imageError;
+  const hasImage = currentUrl && !imageError;
 
   return (
     <div className={`relative bg-gray-200 overflow-hidden ${className}`}>

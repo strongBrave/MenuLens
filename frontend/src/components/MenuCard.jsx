@@ -11,6 +11,7 @@ export default function MenuCard({ dish, onClick }) {
       <div className="h-56 w-full overflow-hidden relative">
         <DishImage 
           url={dish.image_url} 
+          urls={dish.image_urls}
           alt={dish.english_name}
           className="h-full w-full"
         />

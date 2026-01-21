@@ -72,6 +72,7 @@ export default function DishDetailSidebar({ dish, onClose }) {
         <div className="relative w-full h-[400px] md:h-[500px] shrink-0 bg-gray-100 group">
           <DishImage 
             url={getCurrentImageUrl()} 
+            urls={dish.image_urls}
             alt={dish.english_name} 
             className="w-full h-full object-cover"
           />
