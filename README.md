@@ -8,36 +8,48 @@
 
 MenuLens is a modern full-stack application that helps travelers and foodies understand foreign menus instantly. 
 
-It uses **Google Gemini 1.5 Pro** to extract dishes from menu photos and a **Hybrid RAG Pipeline** (Retrieval-Augmented Generation) to automatically find, verify, and display high-quality images for each dish.
+It uses **Google Gemini 2.0 Flash Lite** (optimized for speed and cost) to extract dishes from menu photos and a **Hybrid RAG Pipeline** (Retrieval-Augmented Generation) to automatically find, verify, and display high-quality images for each dish.
 
 Whether you're in a local diner or a foreign country, MenuLens visualizes what you're about to eat.
 
 ## 🚀 Key Features
 
-- **📸 AI Menu Recognition**: Instantly extracts dish names, prices, and descriptions from raw menu photos using Gemini Vision.
+- **📸 AI Menu Recognition**: Instantly extracts dish names, prices, and descriptions from raw menu photos using **Gemini 2.0 Flash Lite**.
+- **🌍 Global Language Support**: 
+  - Select your preferred language (English, Chinese, Japanese, etc.) for descriptions.
+  - Automatically translates dish details while keeping original names for ordering.
+- **💱 Smart Currency Converter**: 
+  - Define the menu's source currency (e.g., JPY) and your target currency (e.g., USD).
+  - Instantly see prices converted to your home currency.
+- **🥦 Dietary Filters**: 
+  - Smartly tags dishes (Vegan, Spicy, Contains Pork, etc.).
+  - Filter the menu instantly to match your dietary needs.
 - **🔍 Hybrid Image Search**: 
   - Retrieves multiple candidate images via Google Search API.
-  - Uses **AI Vision Verification** (Gating) to ensure images match the dish description.
-  - Auto-skips low-quality or irrelevant images.
+  - Uses **AI Vision Verification** to score image relevance (Match Score).
+  - Displays confidence badges (e.g., "⚡ 95% Match" vs "⚠️ 60% Match").
 - **⚡️ Optimistic UI**: 
   - **Instant Text**: See the dish list in seconds while images load in the background.
-  - **Async Loading**: Images "pop" in one by one without blocking the interface.
-- **🎨 Immersive Split-Layout**: 
-  - **Master Panel**: Scrollable dish list with thumbnails.
-  - **Detail Panel**: High-res lightbox viewer, TTS pronunciation, and rich details.
-- **🗣️ Text-to-Speech**: Native pronunciation support for dish names to help you order like a local.
+  - **Progress Tracking**: Real-time progress bar showing image search status.
+- **🎨 Immersive Detail View**: 
+  - High-res lightbox viewer with zoom.
+  - **🗣️ Text-to-Speech**: Native pronunciation support for dish names.
+  - **Ingredients List**: AI-inferred main ingredients for every dish.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
 - **React 19** + **Vite** (Fast, modern UI)
 - **Tailwind CSS** (Responsive & Glassmorphism styling)
-- **Axios** (API communication)
+- **Framer Motion** (Smooth animations)
+- **Vaul** (Mobile-native drawer experience)
+- **Lucide React** (Beautiful iconography)
 
 ### Backend
 - **FastAPI** (High-performance Python async API)
-- **Google Gemini 1.5 Pro** (LLM for OCR & Logic)
-- **Google Custom Search API** (Image sourcing)
+- **Google Gemini 2.0 Flash Lite** (LLM for OCR, Translation & Logic)
+- **Google Custom Search API / SerpAPI** (Image sourcing)
+- **CLIP / Vision Model** (Image verification & scoring)
 - **AsyncIO** (Concurrent processing for speed)
 
 ## 🧩 Architecture
@@ -46,18 +58,18 @@ MenuLens uses a **Two-Stage Pipeline** for maximum performance:
 
 ```mermaid
 graph TD
-    User[User Upload] --> |Image| API_1[POST /api/analyze-text-only]
+    User[User Upload] --> |Image + Config| API_1[POST /api/analyze-text-only]
     
-    subgraph "Phase 1: Fast OCR"
-        API_1 --> |Vision| Gemini[Gemini 1.5 Pro]
-        Gemini --> |JSON| Client[Frontend List]
+    subgraph "Phase 1: Fast OCR & Analysis"
+        API_1 --> |Vision| Gemini[Gemini 2.0 Flash Lite]
+        Gemini --> |JSON (Dishes + Tags)| Client[Frontend List]
     end
     
     subgraph "Phase 2: Async RAG"
         Client -.-> |Concurrent Req| API_2[POST /api/search-dish-image]
         API_2 --> |Query| Google[Google Search]
         Google --> |Candidates| Verifier[AI Vision Verifier]
-        Verifier --> |Best Matches| Client
+        Verifier --> |Scored Images| Client
     end
 ```
 
@@ -83,7 +95,10 @@ pip install -r requirements.txt
 
 # Configure Environment
 cp .env.example .env
-# Edit .env and fill in your LLM_API_KEY and SEARCH_API_KEY
+# Edit .env:
+# LLM_MODEL=gemini-2.0-flash-lite-preview-02-05
+# LLM_API_KEY=your_key
+# SEARCH_API_KEY=your_key
 ```
 
 **Run the Backend:**
@@ -118,16 +133,17 @@ MenuLens/
 ├── backend/
 │   ├── main.py              # FastAPI entry & endpoints
 │   ├── services/
-│   │   ├── llm_service.py   # Gemini OCR Logic
-│   │   ├── search_service.py# Google Search Wrapper
+│   │   ├── llm_service.py   # Gemini Logic (Prompting & OCR)
+│   │   ├── search_service.py# Search API Wrapper
 │   │   ├── hybrid_pipeline.py # RAG Logic (Search + Verify)
-│   │   └── image_verifier.py  # AI Image Scoring
+│   │   └── image_verifier.py  # Image Relevance Scoring
 │   └── schemas.py           # Pydantic Models
 ├── frontend/
 │   ├── src/
 │   │   ├── components/      # UI Components (MasterPanel, DetailPanel...)
-│   │   ├── api/             # API Client
-│   │   └── App.jsx          # Layout & State Logic
+│   │   ├── api/             # Axios Client
+│   │   ├── utils/           # Currency & Helper functions
+│   │   └── App.jsx          # Main Layout & State Logic
 └── README.md
 ```
 
