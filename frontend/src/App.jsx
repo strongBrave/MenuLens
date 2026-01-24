@@ -4,6 +4,7 @@ import DetailPanel from './components/DetailPanel';
 import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
+import AnnouncementModal from './components/AnnouncementModal';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
@@ -23,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -110,6 +112,11 @@ function App() {
     <ErrorBoundary>
       <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
         
+        <AnnouncementModal 
+          isOpen={showAnnouncement} 
+          onClose={() => setShowAnnouncement(false)} 
+        />
+
         {/* Left: Master Panel */}
         <MasterPanel 
           onUpload={handleUpload}
@@ -118,7 +125,6 @@ function App() {
           dishes={dishes}
           selectedDish={selectedDish}
           onSelectDish={setSelectedDish}
-          hasResults={dishes.length > 0}
         />
 
         {/* Right: Detail Panel (Desktop Only) */}
