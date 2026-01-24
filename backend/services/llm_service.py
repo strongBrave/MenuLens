@@ -115,7 +115,7 @@ Format:
     {
       "original_name": "Original Name (Local Language)",
       "english_name": "English Name",
-      "description": "Short appetizing description (max 20 words)",
+      "description": "Rich, detailed, and appetizing description (around 30-50 words). Describe the taste, texture, cooking method, and cultural background if applicable. Make the user hungry.",
       "flavor_tags": ["spicy", "sweet", "savory", "sour", "bitter", "umami", "fresh"],
       "dietary_tags": ["vegetarian", "vegan", "gluten-free", "contains-nuts", "contains-pork", "contains-alcohol", "spicy", "seafood"],
       "ingredients": ["main ingredient 1", "main ingredient 2"],
@@ -128,10 +128,10 @@ Format:
 
 Rules:
 1. Extract REAL dishes from the image. Do not hallucinate.
-2. Infer `dietary_tags` based on common knowledge (e.g., Tofu -> vegetarian, Pork -> contains-pork).
+2. Infer `dietary_tags` based on common knowledge.
 3. Infer `ingredients` from dish name and description.
-4. If price is missing, leave null. Infer currency from context if possible.
-5. `dietary_tags` MUST use the exact keywords listed above.
+4. Description MUST be detailed and appetizing (NOT short).
+5. If price is missing, leave null. Infer currency from context if possible.
 6. Return empty `dishes` array if no menu detected."""
     
     def _parse_json_response(self, content: str) -> dict:

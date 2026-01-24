@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional, Union
 from datetime import datetime
 
 
@@ -15,9 +15,16 @@ class Dish(BaseModel):
     search_term: str = Field(..., description="搜索词，格式: {EN} {ZH} food dish")
     image_url: Optional[str] = Field(None, description="主要图片URL（向下兼容）")
     image_urls: List[str] = Field(default_factory=list, description="备选图片URL列表")
-    price: Optional[str] = Field(None, description="价格（数字部分）")
+    price: Optional[Union[str, int, float]] = Field(None, description="价格（数字部分）")
     currency: Optional[str] = Field(None, description="货币符号（如 JPY, THB, USD）")
     language_code: Optional[str] = Field("en", description="原文语言代码（如 ja, th, fr）")
+
+    @field_validator('price')
+    @classmethod
+    def coerce_price_to_string(cls, v):
+        if v is None:
+            return None
+        return str(v)
 
     class Config:
         json_schema_extra = {
