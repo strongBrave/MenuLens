@@ -5,6 +5,7 @@ import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
 import AnnouncementModal from './components/AnnouncementModal';
+import ValidationModal from './components/ValidationModal';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
@@ -25,21 +26,29 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [showValidation, setShowValidation] = useState(false);
   const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
-  const [targetCurrency, setTargetCurrency] = useState('USD');
+  const [targetCurrency, setTargetCurrency] = useState('');
+  const [sourceCurrency, setSourceCurrency] = useState('');
+  const [targetLanguage, setTargetLanguage] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
+  
+  // New: Store the uploaded file URL for reference
+  const [menuImageFile, setMenuImageFile] = useState(null);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
+    // Note: Validation is now handled inside MasterPanel before calling this
     setError(null);
     setLoading(true);
     setDishes([]);
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
+    setMenuImageFile(file); // Store the file
 
     try {
-      const response = await analyzeMenuText(file);
+      const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
 
       if (response.data.success) {
         const initialDishes = response.data.dishes || [];
@@ -117,6 +126,7 @@ function App() {
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
     setActiveFilters([]);
+    setMenuImageFile(null);
   };
 
   // Filter Logic
@@ -135,6 +145,11 @@ function App() {
           onClose={() => setShowAnnouncement(false)} 
         />
 
+        <ValidationModal
+          isOpen={showValidation}
+          onClose={() => setShowValidation(false)}
+        />
+
         {/* Left: Master Panel */}
         <MasterPanel 
           onUpload={handleUpload}
@@ -147,8 +162,14 @@ function App() {
           imageProgress={imageProgress}
           targetCurrency={targetCurrency}
           setTargetCurrency={setTargetCurrency}
+          sourceCurrency={sourceCurrency}
+          setSourceCurrency={setSourceCurrency}
+          targetLanguage={targetLanguage}
+          setTargetLanguage={setTargetLanguage}
           activeFilters={activeFilters}
           setActiveFilters={setActiveFilters}
+          showValidationModal={() => setShowValidation(true)}
+          currentMenuFile={menuImageFile} // Pass the file
         />
 
         {/* Right: Detail Panel (Desktop Only) */}

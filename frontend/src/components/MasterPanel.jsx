@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import DishListItem from './DishListItem';
-import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload } from 'lucide-react';
+import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload, ZoomIn } from 'lucide-react';
 import { AVAILABLE_CURRENCIES } from '../utils/currency';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DIETARY_FILTERS = [
   { id: 'vegetarian', label: 'Vegetarian', icon: '🥦' },
@@ -30,7 +31,8 @@ export default function MasterPanel({
   setTargetLanguage,
   activeFilters,
   setActiveFilters,
-  showValidationModal // Callback to show modal
+  showValidationModal,
+  currentMenuFile
 }) {
   const showProgress = imageProgress && imageProgress.total > 0 && imageProgress.current < imageProgress.total;
   const progressPercent = showProgress ? Math.round((imageProgress.current / imageProgress.total) * 100) : 0;
@@ -122,6 +124,7 @@ export default function MasterPanel({
                 }
                 return true;
               }}
+              currentMenuFile={currentMenuFile}
             />
          </div>
 
@@ -198,11 +201,12 @@ export default function MasterPanel({
   );
 }
 
-function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig }) {
+function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig, currentMenuFile }) {
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   // If external reset happens (e.g. after upload), clear local state
   useEffect(() => {
@@ -211,14 +215,20 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
     }
   }, [hasDishes, isLoading, selectedFile]);
 
+  // Handle uploaded file preview from parent
+  useEffect(() => {
+    if (currentMenuFile && hasDishes) {
+      const url = URL.createObjectURL(currentMenuFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [currentMenuFile, hasDishes]);
+
   const handleFileSelect = (file) => {
     if (!file.type.startsWith('image/')) return alert('Image only');
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setSelectedFile(file);
-    
-    // NOTE: We do NOT call onUpload here anymore.
-    // We wait for the user to click "Scan".
   };
 
   const handleStartScan = (e) => {
@@ -226,8 +236,6 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
     if (validateConfig()) {
       if (selectedFile) {
         onUpload(selectedFile);
-        // We don't clear selectedFile here immediately, 
-        // we let the parent loading state handle the UI transition
       }
     }
   };
@@ -243,20 +251,52 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
   // If already uploaded and showing results
   if (hasDishes) {
     return (
-      <div 
-        className="relative overflow-hidden rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 group h-[60px] flex items-center justify-center cursor-pointer hover:bg-indigo-50 transition-colors"
-        onClick={() => {
-          onReset();
-          setPreviewUrl(null);
-          setSelectedFile(null);
-          fileInputRef.current?.click();
-        }}
-      >
-         <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])} className="hidden" />
-         <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
-           <Upload className="w-4 h-4" />
-           Scan Another Menu
-         </div>
+      <div className="flex gap-2 h-[80px]">
+        {/* Lightbox Modal */}
+        <AnimatePresence>
+          {showLightbox && previewUrl && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out"
+              onClick={() => setShowLightbox(false)}
+            >
+              <img src={previewUrl} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" alt="Menu Original" />
+              <button className="absolute top-4 right-4 text-white bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Left: Thumbnail Preview */}
+        <div 
+          className="relative w-[80px] h-full rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in group"
+          onClick={() => setShowLightbox(true)}
+        >
+          {previewUrl && <img src={previewUrl} className="w-full h-full object-cover" alt="Menu Thumbnail" />}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+
+        {/* Right: Scan New Button */}
+        <div 
+          className="flex-1 relative overflow-hidden rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer flex items-center justify-center group"
+          onClick={() => {
+            onReset();
+            setPreviewUrl(null);
+            setSelectedFile(null);
+            fileInputRef.current?.click();
+          }}
+        >
+           <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])} className="hidden" />
+           <div className="flex flex-col items-center justify-center gap-1 text-indigo-600">
+             <Upload className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+             <span className="text-xs font-bold">Scan New</span>
+           </div>
+        </div>
       </div>
     );
   }
