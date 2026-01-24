@@ -25,6 +25,7 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -33,6 +34,7 @@ function App() {
     setLoading(true);
     setDishes([]);
     setSelectedDish(null);
+    setImageProgress({ current: 0, total: 0 });
 
     try {
       const response = await analyzeMenuText(file);
@@ -40,6 +42,7 @@ function App() {
       if (response.data.success) {
         const initialDishes = response.data.dishes || [];
         setDishes(initialDishes);
+        setImageProgress({ current: 0, total: initialDishes.length });
         
         if (initialDishes.length > 0) {
           setSelectedDish(initialDishes[0]);
@@ -61,6 +64,7 @@ function App() {
 
   const loadImagesForDishes = async (initialDishes) => {
     const CONCURRENT_LIMIT = 3;
+    let completed = 0;
 
     const fetchImage = async (dish) => {
       try {
@@ -86,6 +90,9 @@ function App() {
         }
       } catch (e) {
         console.warn(`Failed to load image for ${dish.english_name}`, e);
+      } finally {
+        completed++;
+        setImageProgress(prev => ({ ...prev, current: completed }));
       }
     };
 
@@ -106,6 +113,7 @@ function App() {
     setDishes([]);
     setError(null);
     setSelectedDish(null);
+    setImageProgress({ current: 0, total: 0 });
   };
 
   return (
@@ -125,6 +133,7 @@ function App() {
           dishes={dishes}
           selectedDish={selectedDish}
           onSelectDish={setSelectedDish}
+          imageProgress={imageProgress}
         />
 
         {/* Right: Detail Panel (Desktop Only) */}

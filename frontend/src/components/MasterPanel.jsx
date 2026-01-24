@@ -1,5 +1,6 @@
 import React from 'react';
 import DishListItem from './DishListItem';
+import { Loader2 } from 'lucide-react';
 
 export default function MasterPanel({ 
   onUpload, 
@@ -7,8 +8,12 @@ export default function MasterPanel({
   onReset, 
   dishes, 
   selectedDish, 
-  onSelectDish
+  onSelectDish,
+  imageProgress
 }) {
+  const showProgress = imageProgress && imageProgress.total > 0 && imageProgress.current < imageProgress.total;
+  const progressPercent = showProgress ? Math.round((imageProgress.current / imageProgress.total) * 100) : 0;
+
   return (
     <aside className="w-full md:w-[380px] lg:w-[420px] bg-white border-r border-gray-200 flex flex-col h-full shrink-0 z-20 shadow-lg">
       
@@ -30,12 +35,32 @@ export default function MasterPanel({
          </div>
       </div>
 
+      {/* Progress Bar (Visible only when searching images) */}
+      {showProgress && (
+        <div className="px-6 py-2 bg-indigo-50 border-b border-indigo-100 animate-fade-in">
+           <div className="flex justify-between items-center text-xs font-semibold text-indigo-700 mb-1.5">
+             <span className="flex items-center gap-1.5">
+               <Loader2 className="w-3 h-3 animate-spin" />
+               Finding images...
+             </span>
+             <span>{imageProgress.current} / {imageProgress.total}</span>
+           </div>
+           <div className="w-full h-1.5 bg-indigo-200 rounded-full overflow-hidden">
+             <div 
+               className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+               style={{ width: `${progressPercent}%` }}
+             />
+           </div>
+        </div>
+      )}
+
       {/* Bottom: Dish List */}
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
         {dishes && dishes.length > 0 ? (
           <div className="space-y-1">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2 mt-2">
-              Detected Dishes ({dishes.length})
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2 mt-2 flex justify-between items-center">
+              <span>Detected Dishes</span>
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{dishes.length}</span>
             </h3>
             {dishes.map((dish, index) => (
               <DishListItem 
@@ -109,7 +134,7 @@ function UploadSection({ onUpload, isLoading, onReset }) {
            {isLoading && (
              <div className="absolute inset-0 flex flex-col items-center justify-center">
                <svg className="animate-spin h-8 w-8 text-white mb-2" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-               <span className="text-white text-xs font-bold">Processing...</span>
+               <span className="text-white text-xs font-bold">Scanning Menu...</span>
              </div>
            )}
          </>
