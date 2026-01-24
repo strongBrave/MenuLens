@@ -36,12 +36,7 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
-    // Validation
-    if (!targetLanguage || !sourceCurrency || !targetCurrency) {
-      setShowValidation(true);
-      return;
-    }
-
+    // Note: Validation is now handled inside MasterPanel before calling this
     setError(null);
     setLoading(true);
     setDishes([]);
@@ -49,7 +44,6 @@ function App() {
     setImageProgress({ current: 0, total: 0 });
 
     try {
-      // Pass targetLanguage and sourceCurrency to API
       const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
 
       if (response.data.success) {
@@ -128,7 +122,6 @@ function App() {
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
     setActiveFilters([]);
-    // Do not reset preferences (language/currency) as users likely want to keep them
   };
 
   // Filter Logic
@@ -170,6 +163,7 @@ function App() {
           setTargetLanguage={setTargetLanguage}
           activeFilters={activeFilters}
           setActiveFilters={setActiveFilters}
+          showValidationModal={() => setShowValidation(true)}
         />
 
         {/* Right: Detail Panel (Desktop Only) */}

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import DishListItem from './DishListItem';
-import { Loader2, DollarSign, Globe, Banknote } from 'lucide-react';
+import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload } from 'lucide-react';
 import { AVAILABLE_CURRENCIES } from '../utils/currency';
 
 const DIETARY_FILTERS = [
@@ -29,7 +29,8 @@ export default function MasterPanel({
   targetLanguage,
   setTargetLanguage,
   activeFilters,
-  setActiveFilters
+  setActiveFilters,
+  showValidationModal // Callback to show modal
 }) {
   const showProgress = imageProgress && imageProgress.total > 0 && imageProgress.current < imageProgress.total;
   const progressPercent = showProgress ? Math.round((imageProgress.current / imageProgress.total) * 100) : 0;
@@ -112,7 +113,15 @@ export default function MasterPanel({
             <UploadSection 
               onUpload={onUpload} 
               isLoading={isLoading} 
-              onReset={onReset} 
+              onReset={onReset}
+              hasDishes={allDishesCount > 0}
+              validateConfig={() => {
+                if (!targetLanguage || !sourceCurrency || !targetCurrency) {
+                  showValidationModal();
+                  return false;
+                }
+                return true;
+              }}
             />
          </div>
 
@@ -137,7 +146,7 @@ export default function MasterPanel({
          )}
       </div>
 
-      {/* Progress Bar (Visible only when searching images) */}
+      {/* Progress Bar */}
       {showProgress && (
         <div className="px-6 py-2 bg-indigo-50 border-b border-indigo-100 animate-fade-in">
            <div className="flex justify-between items-center text-xs font-semibold text-indigo-700 mb-1.5">
@@ -189,28 +198,74 @@ export default function MasterPanel({
   );
 }
 
-function UploadSection({ onUpload, isLoading, onReset }) {
-  const fileInputRef = React.useRef(null);
-  const [dragActive, setDragActive] = React.useState(false);
-  const [previewUrl, setPreviewUrl] = React.useState(null);
+function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig }) {
+  const fileInputRef = useRef(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleFile = (file) => {
+  // If external reset happens (e.g. after upload), clear local state
+  useEffect(() => {
+    if (!hasDishes && !isLoading && !selectedFile) {
+      setPreviewUrl(null);
+    }
+  }, [hasDishes, isLoading, selectedFile]);
+
+  const handleFileSelect = (file) => {
     if (!file.type.startsWith('image/')) return alert('Image only');
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
-    onUpload(file);
+    setSelectedFile(file);
+    
+    // NOTE: We do NOT call onUpload here anymore.
+    // We wait for the user to click "Scan".
   };
 
-  const handleReset = () => {
+  const handleStartScan = (e) => {
+    e.stopPropagation();
+    if (validateConfig()) {
+      if (selectedFile) {
+        onUpload(selectedFile);
+        // We don't clear selectedFile here immediately, 
+        // we let the parent loading state handle the UI transition
+      }
+    }
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
     setPreviewUrl(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     onReset();
   };
 
+  // If already uploaded and showing results
+  if (hasDishes) {
+    return (
+      <div 
+        className="relative overflow-hidden rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 group h-[60px] flex items-center justify-center cursor-pointer hover:bg-indigo-50 transition-colors"
+        onClick={() => {
+          onReset();
+          setPreviewUrl(null);
+          setSelectedFile(null);
+          fileInputRef.current?.click();
+        }}
+      >
+         <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])} className="hidden" />
+         <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
+           <Upload className="w-4 h-4" />
+           Scan Another Menu
+         </div>
+      </div>
+    );
+  }
+
   return (
     <div 
-       className={`relative overflow-hidden rounded-xl border-2 transition-all duration-200 group h-[180px] flex flex-col items-center justify-center
+       className={`relative overflow-hidden rounded-xl border-2 transition-all duration-200 group h-[200px] flex flex-col items-center justify-center
          ${previewUrl ? 'border-transparent bg-slate-900' : (dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-dashed border-slate-300 bg-white hover:border-indigo-400')}
-         ${isLoading ? 'pointer-events-none' : 'cursor-pointer'}
+         ${isLoading ? 'pointer-events-none' : ''}
        `}
        onClick={() => !previewUrl && fileInputRef.current?.click()}
        onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
@@ -218,36 +273,51 @@ function UploadSection({ onUpload, isLoading, onReset }) {
        onDrop={(e) => {
          e.preventDefault();
          setDragActive(false);
-         if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+         if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
        }}
     >
-       <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])} className="hidden" />
+       <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])} className="hidden" />
        
        {previewUrl ? (
          <>
-           <img src={previewUrl} className={`w-full h-full object-contain ${isLoading ? 'opacity-50' : ''}`} alt="Preview" />
-           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleReset(); }} 
-                className="px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all border border-indigo-400"
-              >
-                Upload New
-              </button>
+           <img src={previewUrl} className={`w-full h-full object-contain ${isLoading ? 'opacity-50 blur-sm' : ''}`} alt="Preview" />
+           
+           {/* Overlay Controls */}
+           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[2px] transition-all p-4">
+              
+              {isLoading ? (
+                <div className="flex flex-col items-center">
+                  <Loader2 className="w-10 h-10 text-white animate-spin mb-2" />
+                  <span className="text-white font-bold tracking-wide">Analysing Menu...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 w-full max-w-[200px] animate-fade-in">
+                  <button 
+                    onClick={handleStartScan} 
+                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-xl flex items-center justify-center gap-2 transform transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <ScanSearch className="w-4 h-4" />
+                    Scan Menu
+                  </button>
+                  
+                  <button 
+                    onClick={handleClear}
+                    className="w-full py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-medium rounded-lg backdrop-blur-md transition-colors flex items-center justify-center gap-1"
+                  >
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </button>
+                </div>
+              )}
            </div>
-           {isLoading && (
-             <div className="absolute inset-0 flex flex-col items-center justify-center">
-               <svg className="animate-spin h-8 w-8 text-white mb-2" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-               <span className="text-white text-xs font-bold">Scanning Menu...</span>
-             </div>
-           )}
          </>
        ) : (
-         <div className="text-center p-4">
-            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+         <div className="text-center p-4 cursor-pointer">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
+              <ScanSearch className="w-6 h-6" />
             </div>
-            <span className="text-sm font-bold text-slate-700">Upload Menu</span>
-            <p className="text-xs text-slate-400 mt-1">Drag & drop or click</p>
+            <span className="text-sm font-bold text-slate-700 block">Upload Menu Photo</span>
+            <p className="text-xs text-slate-400 mt-1">Drag & drop or click to browse</p>
          </div>
        )}
     </div>
