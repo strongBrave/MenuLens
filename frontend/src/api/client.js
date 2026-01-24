@@ -1,45 +1,51 @@
 import axios from 'axios';
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-  timeout: 120000,  // 增加到 120 秒用于 RAG Pipeline 处理
+// Get API base URL from env or default to localhost
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+const client = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 60000, // 60 seconds
 });
 
 /**
- * 分析菜单图片
- * @param {File} imageFile - 图片文件
- * @returns {Promise} API 响应
+ * 1. 快速分析文本 (Phase 1)
+ * @param {File} imageFile 
+ * @param {string} targetLanguage (Optional)
+ * @returns {Promise}
  */
-export async function analyzeMenu(imageFile) {
+export const analyzeMenuText = async (imageFile, targetLanguage = 'English') => {
   const formData = new FormData();
   formData.append('file', imageFile);
+  formData.append('target_language', targetLanguage);
   
-  return apiClient.post('/api/analyze-menu', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000,
+  return client.post('/api/analyze-text-only', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
   });
-}
+};
 
 /**
- * 阶段一：仅分析文本（快速）
+ * 2. 搜索图片 (Phase 2)
+ * @param {Object} dish 
+ * @returns {Promise}
  */
-export async function analyzeMenuText(imageFile) {
+export const searchDishImage = async (dish) => {
+  return client.post('/api/search-dish-image', dish);
+};
+
+// Original full analyze (Legacy)
+export const analyzeMenu = async (imageFile, targetLanguage = 'English') => {
   const formData = new FormData();
   formData.append('file', imageFile);
+  formData.append('target_language', targetLanguage);
   
-  return apiClient.post('/api/analyze-text-only', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60000,
+  return client.post('/api/analyze-menu', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
   });
-}
+};
 
-/**
- * 阶段二：搜索单个菜品的图片
- */
-export async function searchDishImage(dish) {
-  return apiClient.post('/api/search-dish-image', dish, {
-    timeout: 240000,
-  });
-}
-
-export default apiClient;
+export default client;

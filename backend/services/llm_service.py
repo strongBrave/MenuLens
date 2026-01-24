@@ -26,12 +26,13 @@ class GeminiAnalyzer:
             )
         return self._client
     
-    async def analyze_menu_image(self, base64_image: str) -> List[Dish]:
+    async def analyze_menu_image(self, base64_image: str, target_language: str = "English") -> List[Dish]:
         """
         分析菜单图片，识别菜品信息
         
         Args:
             base64_image: Base64编码的图片
+            target_language: 目标输出语言
             
         Returns:
             菜品列表
@@ -47,7 +48,7 @@ class GeminiAnalyzer:
                 "content": [
                     {
                         "type": "text",
-                        "text": self._get_system_prompt()
+                        "text": self._get_system_prompt(target_language)
                     },
                     {
                         "type": "image_url",
@@ -93,7 +94,7 @@ class GeminiAnalyzer:
                 )
                 dishes.append(dish)
             
-            logger.info(f"Successfully analyzed {len(dishes)} dishes from menu")
+            logger.info(f"Successfully analyzed {len(dishes)} dishes from menu in {target_language}")
             return dishes
             
         except APITimeoutError:
@@ -103,36 +104,39 @@ class GeminiAnalyzer:
             logger.error(f"Gemini API error: {str(e)}")
             raise ValueError(f"API error: {str(e)}")
     
-    def _get_system_prompt(self) -> str:
+    def _get_system_prompt(self, target_language: str) -> str:
         """获取系统提示词"""
-        return """You are a professional Menu AI Expert. Analyze the menu image and extract dish information.
+        return f"""You are a professional Menu AI Expert. Analyze the menu image and extract dish information.
 
 Output STRICT JSON format. No markdown, no code blocks.
 
+IMPORTANT: Translate 'english_name', 'description', 'flavor_tags', and 'ingredients' into {target_language}.
+However, 'original_name' MUST remain in the original language shown on the menu.
+
 Format:
-{
+{{
   "dishes": [
-    {
+    {{
       "original_name": "Original Name (Local Language)",
-      "english_name": "English Name",
-      "description": "Rich, detailed, and appetizing description (around 30-50 words). Describe the taste, texture, cooking method, and cultural background if applicable. Make the user hungry.",
-      "flavor_tags": ["spicy", "sweet", "savory", "sour", "bitter", "umami", "fresh"],
+      "english_name": "Translated Name in {target_language}",
+      "description": "Rich, detailed, and appetizing description in {target_language} (30-50 words). Describe taste, texture, method.",
+      "flavor_tags": ["tag1", "tag2", "tag3 (in {target_language})"],
       "dietary_tags": ["vegetarian", "vegan", "gluten-free", "contains-nuts", "contains-pork", "contains-alcohol", "spicy", "seafood"],
-      "ingredients": ["main ingredient 1", "main ingredient 2"],
-      "price": "Number only (e.g. 1200)",
-      "currency": "Symbol (e.g. JPY, USD, THB, CNY)",
-      "language_code": "ISO code (e.g. ja, zh, th, fr)"
-    }
+      "ingredients": ["ingredient 1", "ingredient 2 (in {target_language})"],
+      "price": "Number only",
+      "currency": "Symbol (e.g. JPY, USD)",
+      "language_code": "ISO code of original menu language"
+    }}
   ]
-}
+}}
 
 Rules:
-1. Extract REAL dishes from the image. Do not hallucinate.
-2. Infer `dietary_tags` based on common knowledge.
-3. Infer `ingredients` from dish name and description.
-4. Description MUST be detailed and appetizing (NOT short).
-5. If price is missing, leave null. Infer currency from context if possible.
-6. Return empty `dishes` array if no menu detected."""
+1. Extract REAL dishes.
+2. Infer `dietary_tags` (keep these keys in English for system logic).
+3. Translate content to {target_language}.
+4. Description MUST be appetizing.
+5. If price missing, null.
+6. Return empty `dishes` if no menu."""
     
     def _parse_json_response(self, content: str) -> dict:
         """解析 JSON 响应"""

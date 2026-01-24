@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 import logging
@@ -8,7 +8,7 @@ import io
 from PIL import Image
 
 from config import settings
-from schemas import MenuResponse, Dish
+from schemas import MenuResponse, Dish, MenuRequest
 from services.llm_service import gemini_analyzer
 from services import hybrid_pipeline as hp_module
 from services.image_proxy import image_proxy
@@ -77,17 +77,9 @@ async def health_check():
 
 
 @app.post("/api/analyze-menu", response_model=MenuResponse)
-async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
+async def analyze_menu(file: UploadFile = File(...), target_language: str = Form("English")) -> MenuResponse:
     """
     分析菜单图片并获取图片
-    
-    新增 RAG Pipeline (v2.0)：
-    1. 验证和编码图片
-    2. 调用 Gemini 识别菜品
-    3. 并发搜索菜品图片（Top 3 候选）
-    4. 视觉验证候选图片相关性
-    5. 验证失败则生成图片
-    6. 返回完整数据
     """
     try:
         # 1. 验证文件
@@ -105,9 +97,9 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
         # 4. 转换为 Base64
         base64_image = encode_image_to_base64(contents)
         
-        # 5. 调用 Gemini 分析菜品
-        logger.info(f"🔍 Analyzing menu from file: {file.filename}")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image)
+        # 5. 调用 Gemini 分析菜品 (传入 target_language)
+        logger.info(f"🔍 Analyzing menu from file: {file.filename} in {target_language}")
+        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language)
         
         if not dishes:
             return MenuResponse(
@@ -138,7 +130,8 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
             metadata={
                 "total_dishes": len(enriched_dishes),
                 "filename": file.filename,
-                "rag_pipeline": settings.ENABLE_RAG_PIPELINE
+                "rag_pipeline": settings.ENABLE_RAG_PIPELINE,
+                "language": target_language
             }
         )
         
@@ -151,10 +144,9 @@ async def analyze_menu(file: UploadFile = File(...)) -> MenuResponse:
 
 
 @app.post("/api/analyze-text-only", response_model=MenuResponse)
-async def analyze_text_only(file: UploadFile = File(...)) -> MenuResponse:
+async def analyze_text_only(file: UploadFile = File(...), target_language: str = Form("English")) -> MenuResponse:
     """
     第一阶段：仅分析文本（快速响应）
-    用于乐观 UI 更新，只运行 Gemini 识别，不进行图片搜索
     """
     try:
         if not file.content_type.startswith("image/"):
@@ -167,8 +159,8 @@ async def analyze_text_only(file: UploadFile = File(...)) -> MenuResponse:
         
         base64_image = encode_image_to_base64(contents)
         
-        logger.info(f"🔍 Analyzing text only from file: {file.filename}")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image)
+        logger.info(f"🔍 Analyzing text only from file: {file.filename} in {target_language}")
+        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language)
         
         return MenuResponse(
             success=True,
@@ -176,7 +168,8 @@ async def analyze_text_only(file: UploadFile = File(...)) -> MenuResponse:
             metadata={
                 "total_dishes": len(dishes),
                 "filename": file.filename,
-                "mode": "text_only"
+                "mode": "text_only",
+                "language": target_language
             }
         )
     except ValueError as e:
@@ -231,7 +224,8 @@ async def test_analyze():
             description="Stir-fried chicken with peanuts and dried chilies in a spicy sauce",
             flavor_tags=["spicy", "savory", "nutty"],
             search_term="Kung Pao Chicken 宫保鸡丁 food dish",
-            image_url="https://via.placeholder.com/300x200?text=Kung+Pao+Chicken"
+            image_url="https://via.placeholder.com/300x200?text=Kung+Pao+Chicken",
+            match_score=98
         ),
         Dish(
             original_name="蛋炒饭",
@@ -239,7 +233,8 @@ async def test_analyze():
             description="Fluffy fried rice with scrambled eggs and vegetables",
             flavor_tags=["savory", "mild", "comforting"],
             search_term="Fried Rice with Egg 蛋炒饭 food dish",
-            image_url="https://via.placeholder.com/300x200?text=Fried+Rice"
+            image_url="https://via.placeholder.com/300x200?text=Fried+Rice",
+            match_score=85
         )
     ]
     
@@ -256,17 +251,6 @@ async def test_analyze():
 async def proxy_image_endpoint(url: str, retry: int = 3):
     """
     图片代理端点 - 绕过 CORS 和反爬虫限制
-    
-    前端使用方式：
-    1. 原链接：https://example.com/image.jpg
-    2. 改为：/api/proxy-image?url=https://example.com/image.jpg
-    3. 可选参数：retry=3（重试次数，默认3次）
-    
-    优势：
-    - 绕过浏览器 CORS 限制
-    - 轮换 User-Agent（某些图片服务器只允许浏览器访问）
-    - 自动重试机制（处理被限流等临时问题）
-    - 后端可以处理 SSL 错误等问题
     """
     try:
         if not url:

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, X, ChevronLeft, ChevronRight, Maximize2, Tag, Info, UtensilsCrossed } from 'lucide-react';
+import { Volume2, X, ChevronLeft, ChevronRight, Maximize2, Tag, Info, UtensilsCrossed, Zap, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { convertCurrency } from '../utils/currency';
 
@@ -121,6 +121,27 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
              <Maximize2 className="w-4 h-4" />
              <span>Expand View</span>
            </div>
+        </div>
+
+        {/* Match Score Badge (New) */}
+        <div className="absolute top-4 right-4 z-30">
+           {dish.match_score ? (
+             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border shadow-lg text-xs font-bold tracking-wide
+               ${dish.match_score >= 80 
+                 ? 'bg-emerald-500/80 text-white border-emerald-400/50' 
+                 : dish.match_score >= 50 
+                   ? 'bg-amber-500/80 text-white border-amber-400/50' 
+                   : 'bg-red-500/80 text-white border-red-400/50'}`}
+             >
+               {dish.match_score >= 80 ? <Zap className="w-3 h-3 fill-current" /> : <AlertTriangle className="w-3 h-3" />}
+               {dish.match_score}% Match
+             </div>
+           ) : (
+             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/80 text-xs font-bold shadow-lg">
+               <Zap className="w-3 h-3" />
+               AI Matched
+             </div>
+           )}
         </div>
 
         <div className="absolute bottom-6 right-6 flex items-center gap-2 z-30" onClick={e => e.stopPropagation()}>

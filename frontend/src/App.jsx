@@ -26,6 +26,9 @@ function App() {
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
+  const [targetCurrency, setTargetCurrency] = useState('USD');
+  const [targetLanguage, setTargetLanguage] = useState('English');
+  const [activeFilters, setActiveFilters] = useState([]);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -37,7 +40,8 @@ function App() {
     setImageProgress({ current: 0, total: 0 });
 
     try {
-      const response = await analyzeMenuText(file);
+      // Pass targetLanguage to API
+      const response = await analyzeMenuText(file, targetLanguage);
 
       if (response.data.success) {
         const initialDishes = response.data.dishes || [];
@@ -114,7 +118,15 @@ function App() {
     setError(null);
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
+    setActiveFilters([]);
   };
+
+  // Filter Logic
+  const filteredDishes = dishes.filter(dish => {
+    if (activeFilters.length === 0) return true;
+    if (!dish.dietary_tags) return false;
+    return activeFilters.every(filter => dish.dietary_tags.includes(filter));
+  });
 
   return (
     <ErrorBoundary>
@@ -130,10 +142,17 @@ function App() {
           onUpload={handleUpload}
           isLoading={loading}
           onReset={handleReset}
-          dishes={dishes}
+          dishes={filteredDishes}
+          allDishesCount={dishes.length}
           selectedDish={selectedDish}
           onSelectDish={setSelectedDish}
           imageProgress={imageProgress}
+          targetCurrency={targetCurrency}
+          setTargetCurrency={setTargetCurrency}
+          targetLanguage={targetLanguage}
+          setTargetLanguage={setTargetLanguage}
+          activeFilters={activeFilters}
+          setActiveFilters={setActiveFilters}
         />
 
         {/* Right: Detail Panel (Desktop Only) */}
@@ -153,6 +172,7 @@ function App() {
             <DetailPanel 
               dish={selectedDish} 
               key={selectedDish ? (selectedDish.original_name + selectedDish.english_name) : 'empty'}
+              targetCurrency={targetCurrency}
             />
           )}
         </main>
@@ -163,6 +183,7 @@ function App() {
             isOpen={!!selectedDish && !loading && !error} 
             onClose={() => setSelectedDish(null)} 
             dish={selectedDish} 
+            targetCurrency={targetCurrency}
           />
         )}
 
