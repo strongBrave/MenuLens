@@ -25,16 +25,16 @@ class HybridImagePipeline:
         self.verifier = image_verifier
         self.generator = image_generator
     
-    async def get_best_images(self, dish: Dish) -> Tuple[List[str], Optional[int]]:
+    async def get_best_images(self, dish: Dish) -> Tuple[List[str], List[int]]:
         """
-        获取菜品的最佳图片列表和最高分数
+        获取菜品的最佳图片列表和分数列表
         
         Returns:
-            (图片 URL 列表, 最高匹配分数)
+            (图片 URL 列表, 分数列表)
         """
         if not settings.ENABLE_RAG_PIPELINE:
             logger.info(f"RAG Pipeline disabled, using legacy search for {dish.english_name}")
-            return [], None
+            return [], []
         
         start_time = time.time()
         logger.info(f"🔍 Pipeline START for {dish.english_name}")
@@ -47,7 +47,7 @@ class HybridImagePipeline:
         if not candidate_urls:
             logger.warning(f"⚠️  No search results for {dish.english_name} ({search_time:.1f}s), skipping to generation")
             gen_img = await self._generate_image(dish)
-            return ([gen_img], 99) if gen_img else ([], None)
+            return ([gen_img], [99]) if gen_img else ([], [])
         
         logger.info(f"📋 Found {len(candidate_urls)} candidates ({search_time:.1f}s)")
         
@@ -58,18 +58,18 @@ class HybridImagePipeline:
         
         if sorted_results:
             total_time = time.time() - start_time
-            # 提取 URLs 和 最高分
+            # 提取 URLs 和 分数列表
             sorted_urls = [url for url, _ in sorted_results]
-            best_score = int(sorted_results[0][1] * 100) # Convert 0.95 -> 95
+            sorted_scores = [int(score * 100) for _, score in sorted_results]
             
-            logger.info(f"✅ Found {len(sorted_urls)} verified images (Top Score: {best_score}%) ({verify_time:.1f}s verification, {total_time:.1f}s total) for {dish.english_name}")
-            return sorted_urls, best_score
+            logger.info(f"✅ Found {len(sorted_urls)} verified images (Top: {sorted_scores[0]}%) ({verify_time:.1f}s verification, {total_time:.1f}s total)")
+            return sorted_urls, sorted_scores
         
         # Step 3: 验证失败，降级为生成
         logger.warning(f"⚠️  No valid search result (Score < {settings.IMAGE_VERIFY_SCORE_THRESHOLD}), "
                       f"generating image ({verify_time:.1f}s verification)")
         gen_img = await self._generate_image(dish)
-        return ([gen_img], 99) if gen_img else ([], None)
+        return ([gen_img], [99]) if gen_img else ([], [])
 
     async def _verify_and_sort(
         self,
@@ -210,10 +210,11 @@ class HybridImagePipeline:
         success_count = 0
         for dish, result in zip(dishes, results):
             if isinstance(result, tuple) and result[0]:
-                image_urls, best_score = result
+                image_urls, image_scores = result
                 dish.image_urls = image_urls
-                dish.image_url = image_urls[0] # 设置最佳图片为主图
-                dish.match_score = best_score  # 设置匹配分数
+                dish.image_scores = image_scores # 存储所有分数
+                dish.image_url = image_urls[0] 
+                dish.match_score = image_scores[0] # 最佳分数 (兼容旧字段)
                 success_count += 1
             elif isinstance(result, Exception):
                 logger.warning(f"Exception for {dish.english_name}: {result}")

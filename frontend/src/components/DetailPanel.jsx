@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, X, ChevronLeft, ChevronRight, Maximize2, Tag, Info, UtensilsCrossed, Zap, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { convertCurrency } from '../utils/currency';
@@ -7,6 +7,12 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Reset index when dish changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setIsZoomed(false);
+  }, [dish]);
 
   if (!dish) {
     return (
@@ -36,6 +42,16 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
     }
     return dish.image_url;
   };
+
+  // Get score for CURRENT image
+  const getCurrentScore = () => {
+    if (dish.image_scores && dish.image_scores.length > currentImageIndex) {
+      return dish.image_scores[currentImageIndex];
+    }
+    return dish.match_score; // Fallback
+  };
+
+  const currentScore = getCurrentScore();
 
   const handleNextImage = (e) => {
     if (e) e.stopPropagation();
@@ -83,6 +99,17 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
                  alt={dish.english_name}
                  className="max-w-[95vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                />
+               
+               {/* Show score in lightbox too */}
+               <div className="absolute top-4 left-4 z-50">
+                 {currentScore && (
+                   <div className="flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-md rounded-full text-white font-bold border border-white/20">
+                     {currentScore >= 80 ? <Zap className="w-4 h-4 text-yellow-400 fill-current" /> : <AlertTriangle className="w-4 h-4 text-red-400" />}
+                     {currentScore}% Match
+                   </div>
+                 )}
+               </div>
+
                <button 
                  className="absolute top-4 right-4 text-white hover:text-gray-300 bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-md transition-all border border-white/20"
                  onClick={(e) => { e.stopPropagation(); setIsZoomed(false); }}
@@ -123,18 +150,18 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
            </div>
         </div>
 
-        {/* Match Score Badge (New) */}
+        {/* Dynamic Match Score Badge */}
         <div className="absolute top-4 right-4 z-30">
-           {dish.match_score ? (
-             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border shadow-lg text-xs font-bold tracking-wide
-               ${dish.match_score >= 80 
+           {currentScore ? (
+             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border shadow-lg text-xs font-bold tracking-wide transition-colors duration-300
+               ${currentScore >= 80 
                  ? 'bg-emerald-500/80 text-white border-emerald-400/50' 
-                 : dish.match_score >= 50 
+                 : currentScore >= 50 
                    ? 'bg-amber-500/80 text-white border-amber-400/50' 
                    : 'bg-red-500/80 text-white border-red-400/50'}`}
              >
-               {dish.match_score >= 80 ? <Zap className="w-3 h-3 fill-current" /> : <AlertTriangle className="w-3 h-3" />}
-               {dish.match_score}% Match
+               {currentScore >= 80 ? <Zap className="w-3 h-3 fill-current" /> : <AlertTriangle className="w-3 h-3" />}
+               {currentScore}% Match
              </div>
            ) : (
              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/80 text-xs font-bold shadow-lg">

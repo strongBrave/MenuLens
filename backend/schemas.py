@@ -15,7 +15,8 @@ class Dish(BaseModel):
     search_term: str = Field(..., description="搜索词，格式: {EN} {ZH} food dish")
     image_url: Optional[str] = Field(None, description="主要图片URL（向下兼容）")
     image_urls: List[str] = Field(default_factory=list, description="备选图片URL列表")
-    match_score: Optional[int] = Field(None, description="图片匹配置信度 (0-100)")
+    image_scores: List[int] = Field(default_factory=list, description="每张图片的匹配置信度列表 (0-100)")
+    match_score: Optional[int] = Field(None, description="最佳匹配置信度 (向下兼容)")
     price: Optional[Union[str, int, float]] = Field(None, description="价格（数字部分）")
     currency: Optional[str] = Field(None, description="货币符号（如 JPY, THB, USD）")
     language_code: Optional[str] = Field("en", description="原文语言代码（如 ja, th, fr）")
@@ -39,6 +40,7 @@ class Dish(BaseModel):
                 "search_term": "Kung Pao Chicken 宫保鸡丁 food dish",
                 "image_url": "https://example.com/kungpao.jpg",
                 "image_urls": ["https://example.com/kungpao.jpg", "https://example.com/kungpao2.jpg"],
+                "image_scores": [95, 82],
                 "match_score": 95,
                 "price": "58",
                 "currency": "CNY",
