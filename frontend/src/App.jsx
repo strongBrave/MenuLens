@@ -5,6 +5,7 @@ import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
 import AnnouncementModal from './components/AnnouncementModal';
+import ValidationModal from './components/ValidationModal';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
@@ -25,6 +26,7 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [showValidation, setShowValidation] = useState(false);
   const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
   const [targetCurrency, setTargetCurrency] = useState('');
   const [sourceCurrency, setSourceCurrency] = useState('');
@@ -36,7 +38,7 @@ function App() {
   const handleUpload = async (file) => {
     // Validation
     if (!targetLanguage || !sourceCurrency || !targetCurrency) {
-      alert("Please select Language, Menu Currency, and Your Currency before uploading.");
+      setShowValidation(true);
       return;
     }
 
@@ -143,6 +145,11 @@ function App() {
         <AnnouncementModal 
           isOpen={showAnnouncement} 
           onClose={() => setShowAnnouncement(false)} 
+        />
+
+        <ValidationModal
+          isOpen={showValidation}
+          onClose={() => setShowValidation(false)}
         />
 
         {/* Left: Master Panel */}
