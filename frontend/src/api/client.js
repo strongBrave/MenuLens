@@ -5,19 +5,23 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 600000, // 600 seconds
+  timeout: 60000, // 60 seconds
 });
 
 /**
  * 1. 快速分析文本 (Phase 1)
  * @param {File} imageFile 
  * @param {string} targetLanguage (Optional)
+ * @param {string} sourceCurrency (Optional)
  * @returns {Promise}
  */
-export const analyzeMenuText = async (imageFile, targetLanguage = 'English') => {
+export const analyzeMenuText = async (imageFile, targetLanguage = 'English', sourceCurrency = null) => {
   const formData = new FormData();
   formData.append('file', imageFile);
   formData.append('target_language', targetLanguage);
+  if (sourceCurrency) {
+    formData.append('source_currency', sourceCurrency);
+  }
   
   return client.post('/api/analyze-text-only', formData, {
     headers: {
@@ -36,10 +40,13 @@ export const searchDishImage = async (dish) => {
 };
 
 // Original full analyze (Legacy)
-export const analyzeMenu = async (imageFile, targetLanguage = 'English') => {
+export const analyzeMenu = async (imageFile, targetLanguage = 'English', sourceCurrency = null) => {
   const formData = new FormData();
   formData.append('file', imageFile);
   formData.append('target_language', targetLanguage);
+  if (sourceCurrency) {
+    formData.append('source_currency', sourceCurrency);
+  }
   
   return client.post('/api/analyze-menu', formData, {
     headers: {

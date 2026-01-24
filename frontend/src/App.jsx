@@ -26,13 +26,20 @@ function App() {
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
-  const [targetCurrency, setTargetCurrency] = useState('USD');
-  const [targetLanguage, setTargetLanguage] = useState('English');
+  const [targetCurrency, setTargetCurrency] = useState('');
+  const [sourceCurrency, setSourceCurrency] = useState('');
+  const [targetLanguage, setTargetLanguage] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
+    // Validation
+    if (!targetLanguage || !sourceCurrency || !targetCurrency) {
+      alert("Please select Language, Menu Currency, and Your Currency before uploading.");
+      return;
+    }
+
     setError(null);
     setLoading(true);
     setDishes([]);
@@ -40,8 +47,8 @@ function App() {
     setImageProgress({ current: 0, total: 0 });
 
     try {
-      // Pass targetLanguage to API
-      const response = await analyzeMenuText(file, targetLanguage);
+      // Pass targetLanguage and sourceCurrency to API
+      const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
 
       if (response.data.success) {
         const initialDishes = response.data.dishes || [];
@@ -119,6 +126,7 @@ function App() {
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
     setActiveFilters([]);
+    // Do not reset preferences (language/currency) as users likely want to keep them
   };
 
   // Filter Logic
@@ -149,6 +157,8 @@ function App() {
           imageProgress={imageProgress}
           targetCurrency={targetCurrency}
           setTargetCurrency={setTargetCurrency}
+          sourceCurrency={sourceCurrency}
+          setSourceCurrency={setSourceCurrency}
           targetLanguage={targetLanguage}
           setTargetLanguage={setTargetLanguage}
           activeFilters={activeFilters}

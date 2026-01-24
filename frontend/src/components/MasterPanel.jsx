@@ -1,6 +1,6 @@
 import React from 'react';
 import DishListItem from './DishListItem';
-import { Loader2, DollarSign, Globe } from 'lucide-react';
+import { Loader2, DollarSign, Globe, Banknote } from 'lucide-react';
 import { AVAILABLE_CURRENCIES } from '../utils/currency';
 
 const DIETARY_FILTERS = [
@@ -24,6 +24,8 @@ export default function MasterPanel({
   imageProgress,
   targetCurrency,
   setTargetCurrency,
+  sourceCurrency,
+  setSourceCurrency,
   targetLanguage,
   setTargetLanguage,
   activeFilters,
@@ -55,36 +57,53 @@ export default function MasterPanel({
                  </div>
                </div>
                
-               {/* Controls Row */}
-               <div className="flex gap-2">
-                 {/* Currency Selector */}
-                 <div className="relative flex-1">
-                   <select 
-                     value={targetCurrency}
-                     onChange={(e) => setTargetCurrency(e.target.value)}
-                     className="w-full appearance-none bg-white border border-gray-200 text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
-                   >
-                     {AVAILABLE_CURRENCIES.map(c => (
-                       <option key={c} value={c}>{c}</option>
-                     ))}
-                   </select>
-                   <DollarSign className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                 </div>
-
+               {/* Controls Grid */}
+               <div className="grid grid-cols-2 gap-2">
                  {/* Language Selector */}
-                 <div className="relative flex-1">
+                 <div className="relative col-span-2">
                    <select 
                      value={targetLanguage}
                      onChange={(e) => setTargetLanguage(e.target.value)}
-                     disabled={allDishesCount > 0} // Lock language after upload to avoid confusion
-                     className={`w-full appearance-none bg-white border border-gray-200 text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                     title={allDishesCount > 0 ? "Language locked after upload" : "Select output language"}
+                     disabled={allDishesCount > 0} 
+                     className={`w-full appearance-none bg-white border ${!targetLanguage ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                    >
+                     <option value="" disabled>Select Output Language</option>
                      {AVAILABLE_LANGUAGES.map(l => (
                        <option key={l} value={l}>{l}</option>
                      ))}
                    </select>
                    <Globe className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                 </div>
+
+                 {/* Menu Currency (Source) */}
+                 <div className="relative">
+                   <select 
+                     value={sourceCurrency}
+                     onChange={(e) => setSourceCurrency(e.target.value)}
+                     disabled={allDishesCount > 0}
+                     className={`w-full appearance-none bg-white border ${!sourceCurrency ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                   >
+                     <option value="" disabled>Menu Currency</option>
+                     {AVAILABLE_CURRENCIES.map(c => (
+                       <option key={c} value={c}>{c}</option>
+                     ))}
+                   </select>
+                   <Banknote className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                 </div>
+
+                 {/* My Currency (Target) */}
+                 <div className="relative">
+                   <select 
+                     value={targetCurrency}
+                     onChange={(e) => setTargetCurrency(e.target.value)}
+                     className={`w-full appearance-none bg-white border ${!targetCurrency ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors`}
+                   >
+                     <option value="" disabled>My Currency</option>
+                     {AVAILABLE_CURRENCIES.map(c => (
+                       <option key={c} value={c}>{c}</option>
+                     ))}
+                   </select>
+                   <DollarSign className="absolute left-2.5 top-1.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                  </div>
                </div>
             </div>

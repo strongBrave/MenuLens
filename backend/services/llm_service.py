@@ -26,20 +26,9 @@ class GeminiAnalyzer:
             )
         return self._client
     
-    async def analyze_menu_image(self, base64_image: str, target_language: str = "English") -> List[Dish]:
+    async def analyze_menu_image(self, base64_image: str, target_language: str = "English", source_currency: str = None) -> List[Dish]:
         """
         分析菜单图片，识别菜品信息
-        
-        Args:
-            base64_image: Base64编码的图片
-            target_language: 目标输出语言
-            
-        Returns:
-            菜品列表
-            
-        Raises:
-            ValueError: 解析失败
-            APIError: API调用失败
         """
         try:
             # 构造消息
@@ -48,7 +37,7 @@ class GeminiAnalyzer:
                 "content": [
                     {
                         "type": "text",
-                        "text": self._get_system_prompt(target_language)
+                        "text": self._get_system_prompt(target_language, source_currency)
                     },
                     {
                         "type": "image_url",
@@ -80,6 +69,12 @@ class GeminiAnalyzer:
 
                 name_to_search = item['original_name'] if item.get('original_name') else item['english_name']
                 
+                # 强制使用用户指定的货币（如果提供了且 LLM 没填或填错）
+                # 但这里我们主要依赖 Prompt 的引导，并在转换时兜底
+                currency = item.get("currency")
+                if source_currency and (not currency or currency == "Unknown"):
+                    currency = source_currency
+                
                 dish = Dish(
                     original_name=item["original_name"],
                     english_name=item["english_name"],
@@ -89,7 +84,7 @@ class GeminiAnalyzer:
                     ingredients=item.get("ingredients", []),
                     search_term=f"{name_to_search} food dish",
                     price=item.get("price"),
-                    currency=item.get("currency"),
+                    currency=currency,
                     language_code=item.get("language_code", "en")
                 )
                 dishes.append(dish)
@@ -104,8 +99,12 @@ class GeminiAnalyzer:
             logger.error(f"Gemini API error: {str(e)}")
             raise ValueError(f"API error: {str(e)}")
     
-    def _get_system_prompt(self, target_language: str) -> str:
+    def _get_system_prompt(self, target_language: str, source_currency: str = None) -> str:
         """获取系统提示词"""
+        currency_instruction = ""
+        if source_currency:
+            currency_instruction = f"IMPORTANT: The menu currency is '{source_currency}'. If no currency symbol is found on the image, use '{source_currency}' as the currency for all prices."
+
         return f"""You are a professional Menu AI Expert. Analyze the menu image and extract dish information.
 
 Output STRICT JSON format. No markdown, no code blocks.
@@ -113,18 +112,20 @@ Output STRICT JSON format. No markdown, no code blocks.
 IMPORTANT: Translate 'english_name', 'description', 'flavor_tags', and 'ingredients' into {target_language}.
 However, 'original_name' MUST remain in the original language shown on the menu.
 
+{currency_instruction}
+
 Format:
 {{
   "dishes": [
     {{
       "original_name": "Original Name (Local Language)",
       "english_name": "Translated Name in {target_language}",
-      "description": "Rich, detailed, and appetizing description in {target_language} (30-50 words). Describe taste, texture, method.",
+      "description": "Rich, detailed, and appetizing description in {target_language} (80-100 words). Describe taste, texture, cooking method, cultural background, and key ingredients. Make the user hungry.",
       "flavor_tags": ["tag1", "tag2", "tag3 (in {target_language})"],
       "dietary_tags": ["vegetarian", "vegan", "gluten-free", "contains-nuts", "contains-pork", "contains-alcohol", "spicy", "seafood"],
       "ingredients": ["ingredient 1", "ingredient 2 (in {target_language})"],
       "price": "Number only",
-      "currency": "Symbol (e.g. JPY, USD)",
+      "currency": "Symbol (e.g. JPY, USD, THB)",
       "language_code": "ISO code of original menu language"
     }}
   ]
@@ -134,7 +135,7 @@ Rules:
 1. Extract REAL dishes.
 2. Infer `dietary_tags` (keep these keys in English for system logic).
 3. Translate content to {target_language}.
-4. Description MUST be appetizing.
+4. Description MUST be appetizing and detailed (80-100 words).
 5. If price missing, null.
 6. Return empty `dishes` if no menu."""
     

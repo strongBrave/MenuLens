@@ -8,7 +8,7 @@ class Dish(BaseModel):
     id: str = Field(default_factory=lambda: str(datetime.now().timestamp()))
     original_name: str = Field(..., description="菜品原名（中文/本地语言）")
     english_name: str = Field(..., description="英文名称或通用名")
-    description: str = Field(..., max_length=500, description="菜品描述")
+    description: str = Field(..., max_length=1000, description="菜品描述")
     flavor_tags: List[str] = Field(..., max_items=5, description="口味标签")
     dietary_tags: List[str] = Field(default_factory=list, description="膳食标签，如: vegetarian, vegan, gluten-free, contains-nuts, pork, spicy")
     ingredients: List[str] = Field(default_factory=list, description="主要食材列表")
@@ -61,3 +61,4 @@ class MenuRequest(BaseModel):
     image_file: str = Field(..., description="Base64 编码的图片")
     restaurant_context: Optional[str] = Field(None, description="餐厅背景信息（可选）")
     target_language: Optional[str] = Field("English", description="目标输出语言")
+    source_currency: Optional[str] = Field(None, description="菜单原始货币单位 (如 USD, CNY)")
