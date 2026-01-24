@@ -121,10 +121,24 @@ export default function DetailPanel({ dish }) {
 
         <div className="absolute bottom-6 right-6 flex items-center gap-2 z-30" onClick={e => e.stopPropagation()}>
            {dish.image_urls && dish.image_urls.length > 1 && (
-             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-lg">
-               <button onClick={handlePrevImage} className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-               <span className="text-xs font-medium text-white px-1 min-w-[30px] text-center">{currentImageIndex + 1}/{dish.image_urls.length}</span>
-               <button onClick={handleNextImage} className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"><ChevronRight className="w-4 h-4" /></button>
+             <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-full px-4 py-2 border border-white/10 shadow-2xl">
+               <button 
+                 onClick={handlePrevImage} 
+                 className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"
+               >
+                 <ChevronLeft className="w-5 h-5" />
+               </button>
+               
+               <span className="text-xs font-bold text-white tracking-widest min-w-[40px] text-center font-mono">
+                 {currentImageIndex + 1} / {dish.image_urls.length}
+               </span>
+               
+               <button 
+                 onClick={handleNextImage} 
+                 className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"
+               >
+                 <ChevronRight className="w-5 h-5" />
+               </button>
              </div>
            )}
         </div>
