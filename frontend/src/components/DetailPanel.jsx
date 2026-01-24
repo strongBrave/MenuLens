@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Volume2, X, ChevronLeft, ChevronRight, Maximize2, Tag, Info } from 'lucide-react';
+import { Volume2, X, ChevronLeft, ChevronRight, Maximize2, Tag, Info, UtensilsCrossed } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { convertCurrency } from '../utils/currency';
 
-export default function DetailPanel({ dish }) {
-  // Key from parent ensures we reset state on new dish
+export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -25,6 +25,10 @@ export default function DetailPanel({ dish }) {
       </div>
     );
   }
+
+  const convertedPrice = dish.price && dish.currency 
+    ? convertCurrency(dish.price, dish.currency, targetCurrency)
+    : null;
 
   const getCurrentImageUrl = () => {
     if (dish.image_urls && dish.image_urls.length > 0) {
@@ -122,23 +126,9 @@ export default function DetailPanel({ dish }) {
         <div className="absolute bottom-6 right-6 flex items-center gap-2 z-30" onClick={e => e.stopPropagation()}>
            {dish.image_urls && dish.image_urls.length > 1 && (
              <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-full px-4 py-2 border border-white/10 shadow-2xl">
-               <button 
-                 onClick={handlePrevImage} 
-                 className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"
-               >
-                 <ChevronLeft className="w-5 h-5" />
-               </button>
-               
-               <span className="text-xs font-bold text-white tracking-widest min-w-[40px] text-center font-mono">
-                 {currentImageIndex + 1} / {dish.image_urls.length}
-               </span>
-               
-               <button 
-                 onClick={handleNextImage} 
-                 className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"
-               >
-                 <ChevronRight className="w-5 h-5" />
-               </button>
+               <button onClick={handlePrevImage} className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"><ChevronLeft className="w-5 h-5" /></button>
+               <span className="text-xs font-bold text-white tracking-widest min-w-[40px] text-center font-mono">{currentImageIndex + 1} / {dish.image_urls.length}</span>
+               <button onClick={handleNextImage} className="bg-transparent p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 flex items-center justify-center"><ChevronRight className="w-5 h-5" /></button>
              </div>
            )}
         </div>
@@ -166,19 +156,52 @@ export default function DetailPanel({ dish }) {
                <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm shrink-0 flex flex-col items-center min-w-[80px]">
                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Price</span>
                  <span className="text-xl font-bold font-serif">{dish.currency}{dish.price}</span>
+                 {convertedPrice && (
+                    <span className="text-xs text-emerald-600/70 font-mono mt-1 pt-1 border-t border-emerald-200/50 w-full text-center">
+                      ≈ {convertedPrice}
+                    </span>
+                 )}
                </div>
             )}
           </div>
         </div>
 
+        {/* Dietary & Flavor Tags */}
         <div className="flex flex-wrap gap-2 mb-8">
+          {dish.dietary_tags && dish.dietary_tags.map((tag, i) => (
+             <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-bold border border-emerald-100 shadow-sm cursor-default capitalize">
+               {tag === 'vegetarian' && '🥦 '}
+               {tag === 'vegan' && '🌱 '}
+               {tag === 'spicy' && '🌶️ '}
+               {tag === 'contains-pork' && '🐷 '}
+               {tag.replace('-', ' ')}
+             </span>
+          ))}
           {dish.flavor_tags && dish.flavor_tags.map((tag, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-50/50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100/50 hover:bg-indigo-100 transition-colors cursor-default">
+            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-colors cursor-default capitalize">
               <Tag className="w-3 h-3 opacity-60" />
               {tag}
             </span>
           ))}
         </div>
+
+        {/* Ingredients Section (New) */}
+        {dish.ingredients && dish.ingredients.length > 0 && (
+          <div className="mb-8">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
+              <UtensilsCrossed className="w-4 h-4" />
+              Main Ingredients
+            </h3>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {dish.ingredients.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-slate-700 font-medium">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="prose prose-lg prose-indigo max-w-none text-slate-600 mb-12">
           <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4 not-prose">

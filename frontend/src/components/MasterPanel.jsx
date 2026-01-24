@@ -1,29 +1,67 @@
 import React from 'react';
 import DishListItem from './DishListItem';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Filter, DollarSign } from 'lucide-react';
+import { AVAILABLE_CURRENCIES } from '../utils/currency';
+
+const DIETARY_FILTERS = [
+  { id: 'vegetarian', label: 'Vegetarian', icon: '🥦' },
+  { id: 'vegan', label: 'Vegan', icon: '🌱' },
+  { id: 'gluten-free', label: 'Gluten-Free', icon: '🌾' },
+  { id: 'spicy', label: 'Spicy', icon: '🌶️' },
+  { id: 'contains-pork', label: 'Pork', icon: '🐷' },
+];
 
 export default function MasterPanel({ 
   onUpload, 
   isLoading, 
   onReset, 
-  dishes, 
+  dishes,
+  allDishesCount,
   selectedDish, 
   onSelectDish,
-  imageProgress
+  imageProgress,
+  targetCurrency,
+  setTargetCurrency,
+  activeFilters,
+  setActiveFilters
 }) {
   const showProgress = imageProgress && imageProgress.total > 0 && imageProgress.current < imageProgress.total;
   const progressPercent = showProgress ? Math.round((imageProgress.current / imageProgress.total) * 100) : 0;
+
+  const toggleFilter = (filterId) => {
+    setActiveFilters(prev => 
+      prev.includes(filterId) 
+        ? prev.filter(f => f !== filterId) 
+        : [...prev, filterId]
+    );
+  };
 
   return (
     <aside className="w-full md:w-[380px] lg:w-[420px] bg-white border-r border-gray-200 flex flex-col h-full shrink-0 z-20 shadow-lg">
       
       {/* Top: Upload Area */}
       <div className="shrink-0 border-b border-gray-100 bg-gray-50/50">
-         <div className="p-4">
+         <div className="p-4 pb-2">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-4 px-2">
-               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">M</div>
-               <h1 className="text-lg font-bold text-slate-800">MenuLens</h1>
+            <div className="flex items-center justify-between mb-4 px-1">
+               <div className="flex items-center gap-2">
+                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">M</div>
+                 <h1 className="text-lg font-bold text-slate-800">MenuLens</h1>
+               </div>
+               
+               {/* Currency Selector */}
+               <div className="relative">
+                 <select 
+                   value={targetCurrency}
+                   onChange={(e) => setTargetCurrency(e.target.value)}
+                   className="appearance-none bg-white border border-gray-200 text-slate-700 text-xs font-bold py-1.5 pl-3 pr-8 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors"
+                 >
+                   {AVAILABLE_CURRENCIES.map(c => (
+                     <option key={c} value={c}>{c}</option>
+                   ))}
+                 </select>
+                 <DollarSign className="absolute right-2 top-1.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+               </div>
             </div>
 
             {/* Upload Component Logic */}
@@ -33,6 +71,26 @@ export default function MasterPanel({
               onReset={onReset} 
             />
          </div>
+
+         {/* Filter Bar */}
+         {allDishesCount > 0 && (
+            <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar mask-gradient-right">
+              {DIETARY_FILTERS.map(filter => (
+                <button
+                  key={filter.id}
+                  onClick={() => toggleFilter(filter.id)}
+                  className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200
+                    ${activeFilters.includes(filter.id)
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'}
+                  `}
+                >
+                  <span>{filter.icon}</span>
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+         )}
       </div>
 
       {/* Progress Bar (Visible only when searching images) */}
@@ -66,6 +124,7 @@ export default function MasterPanel({
               <DishListItem 
                 key={dish.original_name + index} 
                 dish={dish} 
+                targetCurrency={targetCurrency}
                 isSelected={selectedDish && selectedDish.original_name === dish.original_name}
                 onClick={() => onSelectDish(dish)}
               />

@@ -10,6 +10,8 @@ class Dish(BaseModel):
     english_name: str = Field(..., description="英文名称或通用名")
     description: str = Field(..., max_length=500, description="菜品描述")
     flavor_tags: List[str] = Field(..., max_items=5, description="口味标签")
+    dietary_tags: List[str] = Field(default_factory=list, description="膳食标签，如: vegetarian, vegan, gluten-free, contains-nuts, pork, spicy")
+    ingredients: List[str] = Field(default_factory=list, description="主要食材列表")
     search_term: str = Field(..., description="搜索词，格式: {EN} {ZH} food dish")
     image_url: Optional[str] = Field(None, description="主要图片URL（向下兼容）")
     image_urls: List[str] = Field(default_factory=list, description="备选图片URL列表")
@@ -24,6 +26,8 @@ class Dish(BaseModel):
                 "english_name": "Kung Pao Chicken",
                 "description": "Stir-fried chicken with peanuts and dried chilies",
                 "flavor_tags": ["spicy", "savory", "nutty"],
+                "dietary_tags": ["contains-nuts", "spicy"],
+                "ingredients": ["chicken", "peanuts", "dried chili", "sichuan peppercorn"],
                 "search_term": "Kung Pao Chicken 宫保鸡丁 food dish",
                 "image_url": "https://example.com/kungpao.jpg",
                 "image_urls": ["https://example.com/kungpao.jpg", "https://example.com/kungpao2.jpg"],
