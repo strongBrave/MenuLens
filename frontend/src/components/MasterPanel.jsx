@@ -1,13 +1,5 @@
 import React from 'react';
-import MenuUpload from './MenuUpload'; // We will likely reuse MenuUpload logic but simplify it or just embed it
 import DishListItem from './DishListItem';
-import Sidebar from './Sidebar'; // Reusing the Upload logic from Sidebar but stripping layout
-
-// 为了简化，我们直接在 MasterPanel 里实现上传逻辑的 UI，或者复用 Sidebar 的逻辑
-// 鉴于 MenuUpload 组件是一个独立的上传框，我们可以直接用它。
-// 但我们需要 Sidebar.jsx 里的 "预览+重新上传" 逻辑。
-// 让我们重用 Sidebar.jsx 的逻辑，但把它的布局改成适合 MasterPanel 的样子。
-// 或者，更简单：MasterPanel 包含两部分：Top (Sidebar 简化版) + Bottom (Dish List)。
 
 export default function MasterPanel({ 
   onUpload, 
@@ -15,24 +7,13 @@ export default function MasterPanel({
   onReset, 
   dishes, 
   selectedDish, 
-  onSelectDish,
-  hasResults 
+  onSelectDish
 }) {
   return (
     <aside className="w-full md:w-[380px] lg:w-[420px] bg-white border-r border-gray-200 flex flex-col h-full shrink-0 z-20 shadow-lg">
       
-      {/* Top: Upload Area (Fixed) */}
+      {/* Top: Upload Area */}
       <div className="shrink-0 border-b border-gray-100 bg-gray-50/50">
-         {/* Reusing Sidebar Logic but passing specific className/props if needed */}
-         {/* Actually Sidebar.jsx has a lot of internal state (previewUrl etc). 
-             Ideally we should lift that state up or reuse Sidebar component but hide its footer/instructions when hasResults.
-             Let's use Sidebar component but we need to tell it to render differently or just use it as the top part.
-             Wait, Sidebar component is designed to be full height.
-             Let's extract the "Upload Card" part from Sidebar to a new component or just inline a simple uploader here.
-             
-             Better approach: Use Sidebar.jsx but wrap it in a div with max-height? No.
-             Let's duplicate the Upload Logic here for now to ensure perfect control of the split layout.
-         */}
          <div className="p-4">
             {/* Header */}
             <div className="flex items-center gap-2 mb-4 px-2">
@@ -45,12 +26,11 @@ export default function MasterPanel({
               onUpload={onUpload} 
               isLoading={isLoading} 
               onReset={onReset} 
-              hasResults={hasResults} 
             />
          </div>
       </div>
 
-      {/* Bottom: Dish List (Scrollable) */}
+      {/* Bottom: Dish List */}
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
         {dishes && dishes.length > 0 ? (
           <div className="space-y-1">
@@ -67,7 +47,6 @@ export default function MasterPanel({
             ))}
           </div>
         ) : (
-          /* Empty State for List */
           !isLoading && (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-50">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
@@ -82,8 +61,7 @@ export default function MasterPanel({
   );
 }
 
-// Internal Sub-component for Upload Logic (Simplified from Sidebar)
-function UploadSection({ onUpload, isLoading, onReset, hasResults }) {
+function UploadSection({ onUpload, isLoading, onReset }) {
   const fileInputRef = React.useRef(null);
   const [dragActive, setDragActive] = React.useState(false);
   const [previewUrl, setPreviewUrl] = React.useState(null);

@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MasterPanel from './components/MasterPanel';
 import DetailPanel from './components/DetailPanel';
 import LoadingState from './components/LoadingState';
 import ErrorBoundary from './components/ErrorBoundary';
+import MobileDrawer from './components/MobileDrawer';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const listener = (e) => setMatches(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [query]);
+  return matches;
+}
 
 function App() {
   const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDish, setSelectedDish] = useState(null);
+  
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
     setError(null);
@@ -19,21 +33,17 @@ function App() {
     setSelectedDish(null);
 
     try {
-      // 1. 快速获取文本结果
       const response = await analyzeMenuText(file);
 
       if (response.data.success) {
         const initialDishes = response.data.dishes || [];
         setDishes(initialDishes);
         
-        // 自动选中第一个菜品 (Optimistic)
         if (initialDishes.length > 0) {
           setSelectedDish(initialDishes[0]);
         }
         
         setLoading(false);
-
-        // 2. 异步加载图片 (乐观 UI)
         loadImagesForDishes(initialDishes);
       } else {
         setError(response.data.error || 'Failed to analyze menu');
@@ -48,9 +58,7 @@ function App() {
   };
 
   const loadImagesForDishes = async (initialDishes) => {
-    // 并发控制：同时最多 3 个请求
     const CONCURRENT_LIMIT = 3;
-    let completedCount = 0;
 
     const fetchImage = async (dish) => {
       try {
@@ -67,7 +75,6 @@ function App() {
             return newDishes;
           });
 
-          // 如果当前选中的菜品就是正在更新的这个，也需要同步更新 selectedDish
           setSelectedDish(currentSelected => {
             if (currentSelected && currentSelected.original_name === dish.original_name) {
               return updatedDish;
@@ -77,12 +84,9 @@ function App() {
         }
       } catch (e) {
         console.warn(`Failed to load image for ${dish.english_name}`, e);
-      } finally {
-        completedCount++;
       }
     };
 
-    // 更好的并发实现：递归 Worker Queue
     const queue = [...initialDishes];
     const workers = Array(Math.min(CONCURRENT_LIMIT, queue.length))
       .fill(null)
@@ -104,9 +108,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen overflow-hidden bg-gray-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
+      <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
         
-        {/* Left: Master Panel (Input + List) */}
+        {/* Left: Master Panel */}
         <MasterPanel 
           onUpload={handleUpload}
           isLoading={loading}
@@ -117,8 +121,8 @@ function App() {
           hasResults={dishes.length > 0}
         />
 
-        {/* Right: Detail Panel (Main View) */}
-        <main className="flex-1 relative h-full overflow-hidden bg-white shadow-xl z-10">
+        {/* Right: Detail Panel (Desktop Only) */}
+        <main className="hidden md:block flex-1 relative h-full overflow-hidden bg-white shadow-xl z-10 border-l border-slate-100">
           {error ? (
             <div className="flex items-center justify-center h-full p-8 text-red-600 bg-red-50">
               <div className="text-center">
@@ -131,9 +135,21 @@ function App() {
                <LoadingState step="analyzing" />
             </div>
           ) : (
-            <DetailPanel dish={selectedDish} />
+            <DetailPanel 
+              dish={selectedDish} 
+              key={selectedDish ? (selectedDish.original_name + selectedDish.english_name) : 'empty'}
+            />
           )}
         </main>
+
+        {/* Mobile Drawer */}
+        {isMobile && (
+          <MobileDrawer 
+            isOpen={!!selectedDish && !loading && !error} 
+            onClose={() => setSelectedDish(null)} 
+            dish={selectedDish} 
+          />
+        )}
 
       </div>
     </ErrorBoundary>

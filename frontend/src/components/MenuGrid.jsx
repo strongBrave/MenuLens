@@ -1,9 +1,7 @@
 import React from 'react';
 import MenuCard from './MenuCard';
 
-export default function MenuGrid({ dishes, onReset, onDishClick }) {
-  // We removed the header and "Upload Another" button because those are now handled by the Sidebar layout
-  
+export default function MenuGrid({ dishes, onDishClick }) {
   if (!dishes || dishes.length === 0) return null;
 
   return (
