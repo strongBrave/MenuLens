@@ -4,7 +4,7 @@ import logging
 import asyncio
 from typing import List
 from openai import OpenAI, APIError, APITimeoutError
-from schemas import Dish
+from schemas import Dish, ChatRequest
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,16 @@ class GeminiAnalyzer:
     async def analyze_menu_image(self, base64_image: str, target_language: str = "English", source_currency: str = None) -> List[Dish]:
         """
         分析菜单图片，识别菜品信息
+        
+        Args:
+            base64_image: Base64编码的图片
+            
+        Returns:
+            菜品列表
+            
+        Raises:
+            ValueError: 解析失败
+            APIError: API调用失败
         """
         try:
             # 构造消息
@@ -99,6 +109,54 @@ class GeminiAnalyzer:
             logger.error(f"Gemini API error: {str(e)}")
             raise ValueError(f"API error: {str(e)}")
     
+    async def chat_with_menu(self, request: ChatRequest) -> str:
+        """
+        基于菜单上下文与用户聊天
+        """
+        try:
+            # 构造上下文 Prompt
+            menu_context = "Here is the menu data you have analyzed:\n"
+            for dish in request.dishes:
+                price_str = f"{dish.price} {dish.currency}" if dish.price else "Price unknown"
+                menu_context += f"- {dish.english_name} ({dish.original_name}): {price_str}, {dish.description}. Tags: {', '.join(dish.flavor_tags + dish.dietary_tags)}\n"
+            
+            system_instruction = f"""You are a helpful and knowledgeable Dining Assistant for MenuLens.
+            
+            Your goal is to help the user choose what to eat from the provided menu data.
+            
+            {menu_context}
+            
+            Guidelines:
+            1. Answer the user's question based ONLY on the menu above.
+            2. If the user asks for recommendations (e.g. "I have $50"), suggest a specific combination of dishes and calculate the total.
+            3. If the user asks about dietary restrictions (e.g. "Is there anything vegan?"), list the safe options.
+            4. Keep your answers concise, friendly, and helpful.
+            5. If the user asks about something not on the menu, politely explain that you only know about the current menu.
+            """
+
+            messages = [{"role": "system", "content": system_instruction}]
+            
+            # Add history (last 5 messages to save tokens)
+            for msg in request.history[-5:]:
+                messages.append({"role": msg.get("role"), "content": msg.get("content")})
+            
+            # Add current user message
+            messages.append({"role": "user", "content": request.message})
+
+            response = await asyncio.to_thread(
+                self.client.chat.completions.create,
+                model=self.model,
+                messages=messages,
+                temperature=0.7, # Slightly higher for creative recommendations
+                timeout=20
+            )
+            
+            return response.choices[0].message.content
+
+        except Exception as e:
+            logger.error(f"Chat API error: {str(e)}")
+            raise ValueError(f"Chat failed: {str(e)}")
+
     def _get_system_prompt(self, target_language: str, source_currency: str = None) -> str:
         """获取系统提示词"""
         currency_instruction = ""

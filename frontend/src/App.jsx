@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
 import AnnouncementModal from './components/AnnouncementModal';
 import ValidationModal from './components/ValidationModal';
+import ChatWidget from './components/ChatWidget';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
@@ -33,6 +34,9 @@ function App() {
   const [targetLanguage, setTargetLanguage] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
   
+  // New: Store the uploaded file URL for reference
+  const [menuImageFile, setMenuImageFile] = useState(null);
+  
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
@@ -42,6 +46,7 @@ function App() {
     setDishes([]);
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
+    setMenuImageFile(file); // Store the file
 
     try {
       const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
@@ -122,6 +127,7 @@ function App() {
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
     setActiveFilters([]);
+    setMenuImageFile(null);
   };
 
   // Filter Logic
@@ -164,6 +170,7 @@ function App() {
           activeFilters={activeFilters}
           setActiveFilters={setActiveFilters}
           showValidationModal={() => setShowValidation(true)}
+          currentMenuFile={menuImageFile} // Pass the file
         />
 
         {/* Right: Detail Panel (Desktop Only) */}
@@ -187,6 +194,9 @@ function App() {
             />
           )}
         </main>
+
+        {/* AI Chat Widget */}
+        <ChatWidget dishes={dishes} />
 
         {/* Mobile Drawer */}
         {isMobile && (

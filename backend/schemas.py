@@ -64,3 +64,17 @@ class MenuRequest(BaseModel):
     restaurant_context: Optional[str] = Field(None, description="餐厅背景信息（可选）")
     target_language: Optional[str] = Field("English", description="目标输出语言")
     source_currency: Optional[str] = Field(None, description="菜单原始货币单位 (如 USD, CNY)")
+
+
+class ChatRequest(BaseModel):
+    """聊天请求模型"""
+    message: str = Field(..., description="用户消息")
+    dishes: List[Dish] = Field(..., description="当前菜单的所有菜品上下文")
+    history: List[dict] = Field(default_factory=list, description="对话历史 [{'role': 'user', 'content': '...'}, ...]")
+
+
+class ChatResponse(BaseModel):
+    """聊天响应模型"""
+    success: bool
+    reply: str
+    error: Optional[str] = None

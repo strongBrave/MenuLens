@@ -8,7 +8,7 @@ import io
 from PIL import Image
 
 from config import settings
-from schemas import MenuResponse, Dish, MenuRequest
+from schemas import MenuResponse, Dish, MenuRequest, ChatRequest, ChatResponse
 from services.llm_service import gemini_analyzer
 from services import hybrid_pipeline as hp_module
 from services.image_proxy import image_proxy
@@ -192,17 +192,13 @@ async def analyze_text_only(
 async def search_dish_image(dish: Dish) -> MenuResponse:
     """
     第二阶段：为单个菜品搜索图片（异步加载）
-    用于前端在收到 text-only 结果后，单独为每个菜品发起搜索
     """
     try:
         logger.info(f"🔍 Searching images for dish: {dish.english_name}")
         
-        # 优先使用 RAG Pipeline
         if settings.ENABLE_RAG_PIPELINE and _hybrid_pipeline:
             enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images([dish])
         else:
-            # 否则使用普通搜索 (searcher 是在文件头部定义的全局实例)
-            # 注意：searcher 可能是 google_searcher 或 serp_searcher
             enriched_dishes = await searcher.enrich_dishes_with_images([dish])
         
         return MenuResponse(
@@ -212,12 +208,25 @@ async def search_dish_image(dish: Dish) -> MenuResponse:
         )
     except Exception as e:
         logger.error(f"❌ Search error: {str(e)}")
-        # 即使搜索失败，也返回原 dish，避免前端崩溃
         return MenuResponse(
             success=True,
             dishes=[dish],
             metadata={"error": str(e)}
         )
+
+
+@app.post("/api/menu-chat", response_model=ChatResponse)
+async def menu_chat(request: ChatRequest) -> ChatResponse:
+    """
+    AI Dining Assistant Chat
+    """
+    try:
+        logger.info(f"💬 Chat request: {request.message[:50]}...")
+        reply = await gemini_analyzer.chat_with_menu(request)
+        return ChatResponse(success=True, reply=reply)
+    except Exception as e:
+        logger.error(f"❌ Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # 开发环境下的测试端点

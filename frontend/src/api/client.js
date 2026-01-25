@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 600000, // 600 seconds
+  timeout: 60000, // 60 seconds
 });
 
 /**
@@ -52,6 +52,20 @@ export const analyzeMenu = async (imageFile, targetLanguage = 'English', sourceC
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+  });
+};
+
+/**
+ * 3. AI Chat Assistant
+ * @param {string} message - User query
+ * @param {Array} dishes - Current menu context
+ * @param {Array} history - Chat history
+ */
+export const sendChatMessage = async (message, dishes, history = []) => {
+  return client.post('/api/menu-chat', {
+    message,
+    dishes,
+    history
   });
 };
 
