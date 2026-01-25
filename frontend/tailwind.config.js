@@ -13,6 +13,9 @@ export default {
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       colors: {
+        brand: {
+          primary: '#ea580c',
+        },
         indigo: {
           50: '#f0f4ff',
           100: '#e0e7ff',
