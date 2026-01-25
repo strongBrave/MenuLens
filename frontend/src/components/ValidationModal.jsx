@@ -23,8 +23,8 @@ export default function ValidationModal({ isOpen, onClose }) {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
           >
-            {/* Header */}
-            <div className="bg-brand-600 p-6 text-center relative overflow-hidden">
+            {/* Header - Use explicit bg-orange-600 to ensure visibility */}
+            <div className="bg-orange-600 p-6 text-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-white/10 opacity-50" 
                    style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 70%)' }} 
               />
@@ -32,8 +32,8 @@ export default function ValidationModal({ isOpen, onClose }) {
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md border border-white/30">
                   <CheckCircle2 className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">Almost Ready!</h2>
-                <p className="text-brand-100 text-sm">Please select your preferences first</p>
+                <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-sm">Almost Ready!</h2>
+                <p className="text-orange-100 text-sm font-medium">Please select your preferences first</p>
               </div>
               <button 
                 onClick={onClose}
@@ -81,7 +81,7 @@ export default function ValidationModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Action Button - Explicit dark slate bg */}
               <button
                 onClick={onClose}
                 className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-slate-200 mt-2 active:scale-[0.98]"
