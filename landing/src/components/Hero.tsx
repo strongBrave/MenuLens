@@ -20,7 +20,7 @@ export default function Hero() {
           <div className="flex gap-3 items-center">
             <Link href="/" className="flex items-center gap-3">
               <Image 
-                src="/logo.png" 
+                src="/final_logo.png" 
                 alt="MenuLens Logo" 
                 width={40} 
                 height={40} 
