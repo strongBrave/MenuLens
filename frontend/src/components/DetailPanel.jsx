@@ -70,7 +70,12 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
   const handleSpeak = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(dish.original_name);
+      
+      // Clean the text: Remove numbers (prices) from the end of the string
+      // e.g. "Kung Pao Chicken 58" -> "Kung Pao Chicken"
+      const cleanName = dish.original_name.replace(/[\d.,]+$/, '').trim();
+      
+      const utterance = new SpeechSynthesisUtterance(cleanName);
       if (dish.language_code) {
         utterance.lang = dish.language_code;
       }
@@ -214,10 +219,10 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
           </div>
         </div>
 
-        {/* Dietary & Flavor Tags */}
+        {/* Dietary & Flavor Tags - High Visibility Style */}
         <div className="flex flex-wrap gap-2 mb-8">
           {dish.dietary_tags && dish.dietary_tags.map((tag, i) => (
-             <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-bold border border-emerald-100 shadow-sm cursor-default capitalize">
+             <span key={i} className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-800 rounded-lg text-sm font-bold border border-emerald-200 shadow-sm cursor-default capitalize">
                {tag === 'vegetarian' && '🥦 '}
                {tag === 'vegan' && '🌱 '}
                {tag === 'spicy' && '🌶️ '}
@@ -226,24 +231,24 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
              </span>
           ))}
           {dish.flavor_tags && dish.flavor_tags.map((tag, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-100 transition-colors cursor-default capitalize">
-              <Tag className="w-3 h-3 opacity-60" />
+            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-brand-600 rounded-lg text-sm font-bold border border-brand-200 shadow-sm hover:bg-brand-50 transition-colors cursor-default capitalize">
+              <Tag className="w-3.5 h-3.5 opacity-80" />
               {tag}
             </span>
           ))}
         </div>
 
-        {/* Ingredients Section (New) */}
+        {/* Ingredients Section - High Visibility Style */}
         {dish.ingredients && dish.ingredients.length > 0 && (
-          <div className="mb-8">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
-              <UtensilsCrossed className="w-4 h-4" />
+          <div className="mb-8 p-6 bg-cream-50 rounded-2xl border border-brand-100/50">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-brand-800 uppercase tracking-widest mb-4 border-b border-brand-200 pb-2">
+              <UtensilsCrossed className="w-4 h-4 text-brand-600" />
               Main Ingredients
             </h3>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex flex-wrap gap-3">
               {dish.ingredients.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-slate-700 font-medium">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-400" />
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-brand-100 text-slate-800 font-medium shadow-sm text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                   {item}
                 </div>
               ))}
@@ -251,7 +256,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
           </div>
         )}
 
-        <div className="prose prose-lg prose-indigo max-w-none text-slate-600 mb-12">
+        <div className="prose prose-lg prose-indigo max-w-none text-slate-600 mb-12 px-2">
           <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4 not-prose">
             <Info className="w-5 h-5 text-brand-500" />
             About this dish
@@ -259,9 +264,9 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
           <p className="leading-relaxed font-serif text-lg text-slate-600/90">{dish.description}</p>
         </div>
         
-        <div className="bg-cream-50 rounded-xl p-4 text-xs text-slate-400 flex justify-between items-center border border-slate-100">
+        <div className="bg-white rounded-xl p-4 text-xs text-slate-400 flex justify-between items-center border border-slate-200 shadow-sm mx-2">
            <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />Identified by Gemini Pro</div>
-           <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200">Match: {dish.search_term}</span>
+           <span className="font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200">Match: {dish.search_term}</span>
         </div>
       </div>
     </div>
