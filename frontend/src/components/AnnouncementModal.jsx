@@ -24,12 +24,12 @@ export default function AnnouncementModal({ isOpen, onClose }) {
             className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
           >
             {/* Header Decoration */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brand-500 via-purple-500 to-pink-500" />
 
             <div className="p-6 md:p-8">
               {/* Header */}
               <div className="flex items-start gap-4 mb-6">
-                <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600 shrink-0">
+                <div className="p-3 bg-brand-50 rounded-xl text-brand-600 shrink-0">
                   <Megaphone className="w-6 h-6" />
                 </div>
                 <div>
@@ -38,7 +38,7 @@ export default function AnnouncementModal({ isOpen, onClose }) {
                 </div>
                 <button 
                   onClick={onClose}
-                  className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
+                  className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-cream-50 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -75,13 +75,13 @@ export default function AnnouncementModal({ isOpen, onClose }) {
                 {/* Item 3: Contact */}
                 <div className="flex gap-3">
                   <div className="mt-0.5 shrink-0">
-                     <Mail className="w-5 h-5 text-indigo-500" />
+                     <Mail className="w-5 h-5 text-brand-500" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-800">Contact & Support</h3>
                     <p className="text-sm text-slate-600 leading-relaxed mt-0.5">
                       Have suggestions or feature requests? We'd love to hear from you:<br/>
-                      <a href="mailto:yu1791046157@gmail.com" className="text-indigo-600 font-medium hover:underline">
+                      <a href="mailto:yu1791046157@gmail.com" className="text-brand-600 font-medium hover:underline">
                         yu1791046157@gmail.com
                       </a>
                     </p>

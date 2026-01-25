@@ -24,7 +24,7 @@ export default function ValidationModal({ isOpen, onClose }) {
             className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
           >
             {/* Header */}
-            <div className="bg-indigo-600 p-6 text-center relative overflow-hidden">
+            <div className="bg-brand-600 p-6 text-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-white/10 opacity-50" 
                    style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 70%)' }} 
               />
@@ -33,7 +33,7 @@ export default function ValidationModal({ isOpen, onClose }) {
                   <CheckCircle2 className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-1">Almost Ready!</h2>
-                <p className="text-indigo-100 text-sm">Please select your preferences first</p>
+                <p className="text-brand-100 text-sm">Please select your preferences first</p>
               </div>
               <button 
                 onClick={onClose}

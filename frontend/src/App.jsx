@@ -139,7 +139,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
+      <div className="flex h-screen w-screen overflow-hidden bg-cream-50 font-sans text-slate-900 selection:bg-brand-100 selection:text-brand-700">
         
         <AnnouncementModal 
           isOpen={showAnnouncement} 

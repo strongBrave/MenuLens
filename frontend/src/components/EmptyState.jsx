@@ -2,9 +2,9 @@ import React from 'react';
 
 export default function EmptyState() {
   return (
-    <div className="flex-1 h-full flex flex-col items-center justify-center p-12 text-center bg-slate-50/50">
+    <div className="flex-1 h-full flex flex-col items-center justify-center p-12 text-center bg-cream-50/50">
       <div className="relative mb-8">
-        <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-10 rounded-full animate-pulse"></div>
+        <div className="absolute inset-0 bg-brand-500 blur-3xl opacity-10 rounded-full animate-pulse"></div>
         <img 
           src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Bento%20Box.png" 
           alt="Food Icon" 

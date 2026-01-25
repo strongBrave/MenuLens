@@ -24,24 +24,24 @@ export default function LoadingState({ step }) {
         <div className="mb-8">
           {step === 'analyzing' && (
             <div>
-              <h2 className="text-2xl font-bold text-indigo-600 mb-2">
+              <h2 className="text-2xl font-bold text-brand-600 mb-2">
                 Analyzing Menu{dots}
               </h2>
               <p className="text-gray-600">Using AI to identify dishes from your image</p>
               <div className="mt-4 w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
-                <div className="h-full bg-indigo-600 animate-pulse" style={{ width: '50%' }}></div>
+                <div className="h-full bg-brand-600 animate-pulse" style={{ width: '50%' }}></div>
               </div>
             </div>
           )}
 
           {step === 'searching' && (
             <div>
-              <h2 className="text-2xl font-bold text-indigo-600 mb-2">
+              <h2 className="text-2xl font-bold text-brand-600 mb-2">
                 Searching Images{dots}
               </h2>
               <p className="text-gray-600">Finding pictures for each dish</p>
               <div className="mt-4 w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
-                <div className="h-full bg-indigo-600 animate-pulse" style={{ width: '75%' }}></div>
+                <div className="h-full bg-brand-600 animate-pulse" style={{ width: '75%' }}></div>
               </div>
             </div>
           )}

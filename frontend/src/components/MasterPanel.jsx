@@ -49,13 +49,13 @@ export default function MasterPanel({
     <aside className="w-full md:w-[380px] lg:w-[420px] bg-white border-r border-gray-200 flex flex-col h-full shrink-0 z-20 shadow-lg">
       
       {/* Top: Upload Area */}
-      <div className="shrink-0 border-b border-gray-100 bg-gray-50/50">
+      <div className="shrink-0 border-b border-gray-100 bg-cream-50/50">
          <div className="p-4 pb-2">
             {/* Header */}
             <div className="flex flex-col gap-3 mb-4 px-1">
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
-                   <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-md">M</div>
+                   <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold shadow-brand-200 shadow-md">M</div>
                    <h1 className="text-lg font-bold text-slate-800">MenuLens</h1>
                  </div>
                </div>
@@ -68,7 +68,7 @@ export default function MasterPanel({
                      value={targetLanguage}
                      onChange={(e) => setTargetLanguage(e.target.value)}
                      disabled={allDishesCount > 0} 
-                     className={`w-full appearance-none bg-white border ${!targetLanguage ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     className={`w-full appearance-none bg-white border ${!targetLanguage ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:border-brand-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                    >
                      <option value="" disabled>Select Output Language</option>
                      {AVAILABLE_LANGUAGES.map(l => (
@@ -84,7 +84,7 @@ export default function MasterPanel({
                      value={sourceCurrency}
                      onChange={(e) => setSourceCurrency(e.target.value)}
                      disabled={allDishesCount > 0}
-                     className={`w-full appearance-none bg-white border ${!sourceCurrency ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     className={`w-full appearance-none bg-white border ${!sourceCurrency ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:border-brand-300 transition-colors ${allDishesCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                    >
                      <option value="" disabled>Menu Currency</option>
                      {AVAILABLE_CURRENCIES.map(c => (
@@ -99,7 +99,7 @@ export default function MasterPanel({
                    <select 
                      value={targetCurrency}
                      onChange={(e) => setTargetCurrency(e.target.value)}
-                     className={`w-full appearance-none bg-white border ${!targetCurrency ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-300 transition-colors`}
+                     className={`w-full appearance-none bg-white border ${!targetCurrency ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-200'} text-slate-700 text-xs font-bold py-1.5 pl-8 pr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:border-brand-300 transition-colors`}
                    >
                      <option value="" disabled>My Currency</option>
                      {AVAILABLE_CURRENCIES.map(c => (
@@ -137,8 +137,8 @@ export default function MasterPanel({
                   onClick={() => toggleFilter(filter.id)}
                   className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200
                     ${activeFilters.includes(filter.id)
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'}
+                      ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50'}
                   `}
                 >
                   <span>{filter.icon}</span>
@@ -151,17 +151,17 @@ export default function MasterPanel({
 
       {/* Progress Bar */}
       {showProgress && (
-        <div className="px-6 py-2 bg-indigo-50 border-b border-indigo-100 animate-fade-in">
-           <div className="flex justify-between items-center text-xs font-semibold text-indigo-700 mb-1.5">
+        <div className="px-6 py-2 bg-brand-50 border-b border-brand-100 animate-fade-in">
+           <div className="flex justify-between items-center text-xs font-semibold text-brand-700 mb-1.5">
              <span className="flex items-center gap-1.5">
                <Loader2 className="w-3 h-3 animate-spin" />
                Finding images...
              </span>
              <span>{imageProgress.current} / {imageProgress.total}</span>
            </div>
-           <div className="w-full h-1.5 bg-indigo-200 rounded-full overflow-hidden">
+           <div className="w-full h-1.5 bg-brand-200 rounded-full overflow-hidden">
              <div 
-               className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+               className="h-full bg-brand-600 rounded-full transition-all duration-300 ease-out"
                style={{ width: `${progressPercent}%` }}
              />
            </div>
@@ -284,7 +284,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
 
         {/* Right: Scan New Button */}
         <div 
-          className="flex-1 relative overflow-hidden rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer flex items-center justify-center group"
+          className="flex-1 relative overflow-hidden rounded-xl border-2 border-dashed border-brand-200 bg-brand-50/50 hover:bg-brand-50 transition-colors cursor-pointer flex items-center justify-center group"
           onClick={() => {
             onReset();
             setPreviewUrl(null);
@@ -293,7 +293,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
           }}
         >
            <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])} className="hidden" />
-           <div className="flex flex-col items-center justify-center gap-1 text-indigo-600">
+           <div className="flex flex-col items-center justify-center gap-1 text-brand-600">
              <Upload className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
              <span className="text-xs font-bold">Scan New</span>
            </div>
@@ -305,7 +305,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
   return (
     <div 
        className={`relative overflow-hidden rounded-xl border-2 transition-all duration-200 group h-[200px] flex flex-col items-center justify-center
-         ${previewUrl ? 'border-transparent bg-slate-900' : (dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-dashed border-slate-300 bg-white hover:border-indigo-400')}
+         ${previewUrl ? 'border-transparent bg-slate-900' : (dragActive ? 'border-brand-500 bg-brand-50' : 'border-dashed border-slate-300 bg-white hover:border-brand-400')}
          ${isLoading ? 'pointer-events-none' : ''}
        `}
        onClick={() => !previewUrl && fileInputRef.current?.click()}
@@ -335,7 +335,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
                 <div className="flex flex-col gap-3 w-full max-w-[200px] animate-fade-in">
                   <button 
                     onClick={handleStartScan} 
-                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-xl flex items-center justify-center gap-2 transform transition-transform hover:scale-105 active:scale-95"
+                    className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg shadow-xl flex items-center justify-center gap-2 transform transition-transform hover:scale-105 active:scale-95"
                   >
                     <ScanSearch className="w-4 h-4" />
                     Scan Menu
@@ -354,7 +354,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
          </>
        ) : (
          <div className="text-center p-4 cursor-pointer">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
               <ScanSearch className="w-6 h-6" />
             </div>
             <span className="text-sm font-bold text-slate-700 block">Upload Menu Photo</span>

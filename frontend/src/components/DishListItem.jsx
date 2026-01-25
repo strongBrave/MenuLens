@@ -13,8 +13,8 @@ export default function DishListItem({ dish, isSelected, onClick, targetCurrency
       onClick={onClick}
       className={`group flex items-center p-3 mb-2 rounded-xl cursor-pointer transition-all duration-200 border
         ${isSelected 
-          ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
-          : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-100'}
+          ? 'bg-brand-50 border-brand-200 shadow-sm' 
+          : 'bg-white border-transparent hover:bg-cream-50 hover:border-gray-100'}
       `}
     >
       {/* Thumbnail */}
@@ -38,14 +38,14 @@ export default function DishListItem({ dish, isSelected, onClick, targetCurrency
       {/* Text Info */}
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start">
-          <h4 className={`font-bold text-sm truncate pr-2 ${isSelected ? 'text-indigo-700' : 'text-gray-800'}`}>
+          <h4 className={`font-bold text-sm truncate pr-2 ${isSelected ? 'text-brand-700' : 'text-gray-800'}`}>
             {dish.english_name}
           </h4>
           
           <div className="flex flex-col items-end">
             {/* Original Price */}
             {dish.price && (
-              <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600'}`}>
                 {dish.price}
               </span>
             )}
@@ -80,7 +80,7 @@ export default function DishListItem({ dish, isSelected, onClick, targetCurrency
       
       {/* Active Indicator */}
       {isSelected && (
-        <div className="w-1 h-8 bg-indigo-500 rounded-full ml-2 shrink-0 animate-fade-in"></div>
+        <div className="w-1 h-8 bg-brand-500 rounded-full ml-2 shrink-0 animate-fade-in"></div>
       )}
     </div>
   );

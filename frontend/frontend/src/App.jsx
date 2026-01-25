@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
 import AnnouncementModal from './components/AnnouncementModal';
 import ValidationModal from './components/ValidationModal';
+import ChatWidget from './components/ChatWidget';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
 
@@ -138,7 +139,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen overflow-hidden bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700">
+      <div className="flex h-screen w-screen overflow-hidden bg-cream-50 font-sans text-slate-900 selection:bg-brand-100 selection:text-brand-700">
         
         <AnnouncementModal 
           isOpen={showAnnouncement} 
@@ -193,6 +194,9 @@ function App() {
             />
           )}
         </main>
+
+        {/* AI Chat Widget */}
+        <ChatWidget dishes={dishes} />
 
         {/* Mobile Drawer */}
         {isMobile && (

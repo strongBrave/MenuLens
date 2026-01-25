@@ -16,8 +16,8 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
 
   if (!dish) {
     return (
-      <div className="flex-1 h-full bg-slate-50 flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-indigo-100 border border-indigo-50">
+      <div className="flex-1 h-full bg-cream-50 flex flex-col items-center justify-center p-12 text-center">
+        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-brand-100 border border-brand-50">
           <img 
             src="https://cdn-icons-png.flaticon.com/512/3081/3081840.png" 
             alt="Select Dish" 
@@ -192,7 +192,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
                 <button 
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${isSpeaking ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-200' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${isSpeaking ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-200' : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600'}`}
                 >
                   <Volume2 className={`w-4 h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
                   {isSpeaking ? 'Playing...' : 'Pronounce'}
@@ -226,7 +226,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
              </span>
           ))}
           {dish.flavor_tags && dish.flavor_tags.map((tag, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-colors cursor-default capitalize">
+            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-100 transition-colors cursor-default capitalize">
               <Tag className="w-3 h-3 opacity-60" />
               {tag}
             </span>
@@ -243,7 +243,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {dish.ingredients.map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-slate-700 font-medium">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-400" />
                   {item}
                 </div>
               ))}
@@ -253,14 +253,14 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
 
         <div className="prose prose-lg prose-indigo max-w-none text-slate-600 mb-12">
           <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4 not-prose">
-            <Info className="w-5 h-5 text-indigo-500" />
+            <Info className="w-5 h-5 text-brand-500" />
             About this dish
           </h3>
           <p className="leading-relaxed font-serif text-lg text-slate-600/90">{dish.description}</p>
         </div>
         
-        <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-400 flex justify-between items-center border border-slate-100">
-           <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />Identified by Gemini Pro</div>
+        <div className="bg-cream-50 rounded-xl p-4 text-xs text-slate-400 flex justify-between items-center border border-slate-100">
+           <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />Identified by Gemini Pro</div>
            <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200">Match: {dish.search_term}</span>
         </div>
       </div>

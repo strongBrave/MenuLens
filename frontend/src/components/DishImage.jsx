@@ -61,9 +61,9 @@ export default function DishImage({ url, urls = [], alt, className, isSearching 
   return (
     <div className={`relative bg-gray-200 overflow-hidden ${className}`}>
       {showSearching ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-indigo-50 animate-pulse">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-2" />
-          <span className="text-indigo-400 font-semibold text-xs">Finding best match...</span>
+        <div className="w-full h-full flex flex-col items-center justify-center bg-brand-50 animate-pulse">
+          <Loader2 className="w-8 h-8 text-brand-400 animate-spin mb-2" />
+          <span className="text-brand-400 font-semibold text-xs">Finding best match...</span>
         </div>
       ) : hasImage ? (
         <>
