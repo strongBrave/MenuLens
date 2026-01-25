@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap");
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #FFF8F0; /* 强制全局米黄色背景 */
+}
+
+/* 强制覆盖 Scrollbar 样式，使其可见 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 237, 213, 0.5); /* Orange-100/50 */
+}
+::-webkit-scrollbar-thumb {
+  background: #fdba74; /* Orange-300 */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fb923c; /* Orange-400 */
+}
+
+/* 
+  Global Utility Classes for Consistency 
+  Using standard Tailwind colors to guarantee visibility
+*/
+.bg-cream-canvas {
+  background-color: #FFF8F0 !important;
+}
+
+.bg-cream-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid #FED7AA; /* Orange-200 */
+}
+
+.text-brand-primary {
+  color: #EA580C; /* Orange-600 */
+}
+
+.bg-brand-primary {
+  background-color: #EA580C; /* Orange-600 */
+}
+
+.btn-brand-solid {
+  background-color: #EA580C;
+  color: white;
+  transition: all 0.2s;
+}
+.btn-brand-solid:hover {
+  background-color: #C2410C; /* Orange-700 */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.3);
+}
+
+.btn-brand-soft {
+  background-color: #FFEDD5; /* Orange-100 */
+  color: #C2410C; /* Orange-700 */
+  border: 1px solid #FDBA74; /* Orange-300 */
+}
+.btn-brand-soft:hover {
+  background-color: #FED7AA; /* Orange-200 */
+}
+
+/* Typography */
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Animation Utilities */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

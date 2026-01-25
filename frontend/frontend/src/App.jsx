@@ -34,19 +34,17 @@ function App() {
   const [targetLanguage, setTargetLanguage] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
   
-  // New: Store the uploaded file URL for reference
   const [menuImageFile, setMenuImageFile] = useState(null);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleUpload = async (file) => {
-    // Note: Validation is now handled inside MasterPanel before calling this
     setError(null);
     setLoading(true);
     setDishes([]);
     setSelectedDish(null);
     setImageProgress({ current: 0, total: 0 });
-    setMenuImageFile(file); // Store the file
+    setMenuImageFile(file);
 
     try {
       const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
@@ -139,7 +137,8 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-screen overflow-hidden bg-cream-50 font-sans text-slate-900 selection:bg-brand-100 selection:text-brand-700">
+      {/* Use explicit bg-cream-canvas class for global background */}
+      <div className="flex h-screen w-screen overflow-hidden bg-cream-canvas font-sans text-slate-900 selection:bg-orange-200 selection:text-orange-900">
         
         <AnnouncementModal 
           isOpen={showAnnouncement} 
@@ -170,11 +169,11 @@ function App() {
           activeFilters={activeFilters}
           setActiveFilters={setActiveFilters}
           showValidationModal={() => setShowValidation(true)}
-          currentMenuFile={menuImageFile} // Pass the file
+          currentMenuFile={menuImageFile} 
         />
 
         {/* Right: Detail Panel (Desktop Only) */}
-        <main className="hidden md:block flex-1 relative h-full overflow-hidden bg-white shadow-xl z-10 border-l border-slate-100">
+        <main className="hidden md:block flex-1 relative h-full overflow-hidden bg-white shadow-2xl z-10 border-l border-orange-200/50">
           {error ? (
             <div className="flex items-center justify-center h-full p-8 text-red-600 bg-red-50">
               <div className="text-center">
@@ -183,7 +182,7 @@ function App() {
               </div>
             </div>
           ) : loading ? (
-            <div className="h-full flex items-center justify-center">
+            <div className="h-full flex items-center justify-center bg-cream-canvas">
                <LoadingState step="analyzing" />
             </div>
           ) : (
