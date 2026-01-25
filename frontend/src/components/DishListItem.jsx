@@ -2,7 +2,7 @@ import React from 'react';
 import DishImage from './DishImage';
 import { convertCurrency } from '../utils/currency';
 
-export default function DishListItem({ dish, isSelected, onClick, targetCurrency = 'USD' }) {
+export default function DishListItem({ dish, isSelected, onClick, targetCurrency = 'USD', isSearching }) {
   // Calculate converted price
   const convertedPrice = dish.price && dish.currency 
     ? convertCurrency(dish.price, dish.currency, targetCurrency)
@@ -24,6 +24,7 @@ export default function DishListItem({ dish, isSelected, onClick, targetCurrency
           urls={dish.image_urls}
           alt={dish.english_name}
           className="w-full h-full object-cover"
+          isSearching={isSearching}
         />
         {/* Dietary Badges (Mini) */}
         {dish.dietary_tags && dish.dietary_tags.includes('vegetarian') && (

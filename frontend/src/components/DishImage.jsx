@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
-export default function DishImage({ url, urls = [], alt, className }) {
+export default function DishImage({ url, urls = [], alt, className, isSearching }) {
   // 合并所有可用 URL：优先用 urls 列表，如果没有则用 url
   const allUrls = urls && urls.length > 0 ? urls : (url ? [url] : []);
   
@@ -52,11 +53,19 @@ export default function DishImage({ url, urls = [], alt, className }) {
     }
   };
 
+  // Determine if we should show the "Searching" state
+  // Only searching if no URL is available yet AND the app is still searching
+  const showSearching = isSearching && !currentUrl;
   const hasImage = currentUrl && !imageError;
 
   return (
     <div className={`relative bg-gray-200 overflow-hidden ${className}`}>
-      {hasImage ? (
+      {showSearching ? (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-indigo-50 animate-pulse">
+          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-2" />
+          <span className="text-indigo-400 font-semibold text-xs">Finding best match...</span>
+        </div>
+      ) : hasImage ? (
         <>
           {imageLoading && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 animate-pulse flex items-center justify-center z-10">
@@ -65,7 +74,7 @@ export default function DishImage({ url, urls = [], alt, className }) {
           )}
           <img
             ref={imgRef}
-            src={url}
+            src={currentUrl} // Use currentUrl instead of url prop to support fallback
             alt={alt}
             className="w-full h-full object-cover transition-opacity duration-300"
             onLoad={handleImageLoad}
@@ -87,7 +96,7 @@ export default function DishImage({ url, urls = [], alt, className }) {
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <span className="text-gray-600 font-semibold text-xs">No image</span>
+          <span className="text-gray-600 font-semibold text-xs">No image found</span>
         </div>
       )}
     </div>
