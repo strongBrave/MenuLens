@@ -16,8 +16,8 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
 
   if (!dish) {
     return (
-      <div className="flex-1 h-full bg-cream-50 flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-brand-100 border border-brand-50">
+      <div className="flex-1 h-full bg-[#FFF8F0] flex flex-col items-center justify-center p-12 text-center">
+        <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-xl border border-orange-100">
           <img 
             src="https://cdn-icons-png.flaticon.com/512/3081/3081840.png" 
             alt="Select Dish" 
@@ -72,7 +72,6 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
       window.speechSynthesis.cancel();
       
       // Clean the text: Remove numbers (prices) from the end of the string
-      // e.g. "Kung Pao Chicken 58" -> "Kung Pao Chicken"
       const cleanName = dish.original_name.replace(/[\d.,]+$/, '').trim();
       
       const utterance = new SpeechSynthesisUtterance(cleanName);
@@ -105,7 +104,6 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
                  className="max-w-[95vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                />
                
-               {/* Show score in lightbox too */}
                <div className="absolute top-4 left-4 z-50">
                  {currentScore && (
                    <div className="flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-md rounded-full text-white font-bold border border-white/20">
@@ -197,7 +195,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
                 <button 
                   onClick={handleSpeak}
                   disabled={isSpeaking}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${isSpeaking ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-200' : 'bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${isSpeaking ? 'bg-orange-100 text-orange-700 ring-2 ring-orange-200' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}
                 >
                   <Volume2 className={`w-4 h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
                   {isSpeaking ? 'Playing...' : 'Pronounce'}
@@ -231,7 +229,7 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
              </span>
           ))}
           {dish.flavor_tags && dish.flavor_tags.map((tag, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-brand-600 rounded-lg text-sm font-bold border border-brand-200 shadow-sm hover:bg-brand-50 transition-colors cursor-default capitalize">
+            <span key={i} className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-orange-600 rounded-lg text-sm font-bold border border-orange-200 shadow-sm hover:bg-orange-50 transition-colors cursor-default capitalize">
               <Tag className="w-3.5 h-3.5 opacity-80" />
               {tag}
             </span>
@@ -240,15 +238,15 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
 
         {/* Ingredients Section - High Visibility Style */}
         {dish.ingredients && dish.ingredients.length > 0 && (
-          <div className="mb-8 p-6 bg-cream-50 rounded-2xl border border-brand-100/50">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-brand-800 uppercase tracking-widest mb-4 border-b border-brand-200 pb-2">
-              <UtensilsCrossed className="w-4 h-4 text-brand-600" />
+          <div className="mb-8 p-6 bg-[#FFF8F0] rounded-2xl border border-orange-200">
+            <h3 className="flex items-center gap-2 text-sm font-extrabold text-orange-800 uppercase tracking-widest mb-4 border-b border-orange-200 pb-2">
+              <UtensilsCrossed className="w-4 h-4 text-orange-600" />
               Main Ingredients
             </h3>
             <div className="flex flex-wrap gap-3">
               {dish.ingredients.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-brand-100 text-slate-800 font-medium shadow-sm text-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-orange-100 text-slate-800 font-bold shadow-sm text-sm">
+                  <div className="w-2 h-2 rounded-full bg-orange-500" />
                   {item}
                 </div>
               ))}
@@ -256,16 +254,16 @@ export default function DetailPanel({ dish, targetCurrency = 'USD' }) {
           </div>
         )}
 
-        <div className="prose prose-lg prose-indigo max-w-none text-slate-600 mb-12 px-2">
+        <div className="prose prose-lg prose-orange max-w-none text-slate-600 mb-12 px-2">
           <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4 not-prose">
-            <Info className="w-5 h-5 text-brand-500" />
+            <Info className="w-5 h-5 text-orange-500" />
             About this dish
           </h3>
           <p className="leading-relaxed font-serif text-lg text-slate-600/90">{dish.description}</p>
         </div>
         
         <div className="bg-white rounded-xl p-4 text-xs text-slate-400 flex justify-between items-center border border-slate-200 shadow-sm mx-2">
-           <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />Identified by Gemini Pro</div>
+           <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />Identified by Gemini Pro</div>
            <span className="font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200">Match: {dish.search_term}</span>
         </div>
       </div>
