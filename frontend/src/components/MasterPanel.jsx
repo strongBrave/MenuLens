@@ -54,9 +54,10 @@ export default function MasterPanel({
             {/* Header */}
             <div className="flex flex-col gap-3 mb-4 px-1">
                <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                   <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-orange-200">M</div>
-                   <h1 className="text-xl font-bold text-slate-900 tracking-tight">MenuLens</h1>
+                 <div className="flex items-center gap-3">
+                   {/* Replaced Icon with Logo Image */}
+                   <img src="/logo.png" alt="MenuLens Logo" className="w-10 h-10 object-contain drop-shadow-md" />
+                   <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-serif">MenuLens</h1>
                  </div>
                </div>
                

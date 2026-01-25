@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Hero() {
   return (
@@ -14,11 +15,39 @@ export default function Hero() {
       </div>
 
       {/* Navigation/Brand Header */}
-      <nav className="absolute top-0 left-0 w-full z-20 p-6 md:p-8">
+      <nav className="absolute top-0 left-0 w-full z-20 p-6 md:p-8 bg-gradient-to-b from-black/50 to-transparent">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link href="/" className="font-serif text-2xl md:text-3xl font-bold text-white tracking-wide">
-            MenuLens
-          </Link>
+          <div className="flex gap-3 items-center">
+            <Link href="/" className="flex items-center gap-3">
+              <Image 
+                src="/logo.png" 
+                alt="MenuLens Logo" 
+                width={40} 
+                height={40} 
+                className="w-8 h-8 md:w-10 md:h-10"
+              />
+              <span className="font-serif font-bold text-white text-xl md:text-2xl tracking-wide">
+                MenuLens
+              </span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-6 md:gap-8">
+            <div className="hidden md:flex items-center gap-6">
+              <Link href="#features" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                Features
+              </Link>
+              <Link href="#how-it-works" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                How it works
+              </Link>
+            </div>
+            <Link 
+              href="https://app.menulens.com"
+              className="bg-white text-black px-5 py-2.5 rounded-full font-medium text-sm hover:bg-gray-100 transition-colors"
+            >
+              Get App
+            </Link>
+          </div>
         </div>
       </nav>
 
