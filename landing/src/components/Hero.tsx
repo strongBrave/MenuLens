@@ -15,7 +15,7 @@ export default function Hero() {
       </div>
 
       {/* Navigation/Brand Header */}
-      <nav className="absolute top-0 left-0 w-full z-20 p-6 md:p-8 bg-gradient-to-b from-black/50 to-transparent">
+      <nav className="fixed top-0 left-0 w-full z-50 p-6 md:p-8 bg-[#FDFBF7]/90 backdrop-blur-md shadow-sm border-b border-black/5 transition-all duration-300">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex gap-3 items-center">
             <Link href="/" className="flex items-center gap-3">
@@ -26,7 +26,7 @@ export default function Hero() {
                 height={40} 
                 className="w-8 h-8 md:w-10 md:h-10"
               />
-              <span className="font-serif font-bold text-white text-xl md:text-2xl tracking-wide">
+              <span className="font-serif font-bold text-soft-black text-xl md:text-2xl tracking-wide">
                 MenuLens
               </span>
             </Link>
@@ -34,16 +34,16 @@ export default function Hero() {
 
           <div className="flex items-center gap-6 md:gap-8">
             <div className="hidden md:flex items-center gap-6">
-              <Link href="#features" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+              <Link href="#features" className="text-gray-600 hover:text-black text-sm font-medium transition-colors">
                 Features
               </Link>
-              <Link href="#how-it-works" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+              <Link href="#how-it-works" className="text-gray-600 hover:text-black text-sm font-medium transition-colors">
                 How it works
               </Link>
             </div>
             <Link 
               href="https://app.menulens.com"
-              className="bg-white text-black px-5 py-2.5 rounded-full font-medium text-sm hover:bg-gray-100 transition-colors"
+              className="bg-primary text-white hover:bg-orange-600 px-5 py-2.5 rounded-full font-medium text-sm transition-colors"
             >
               Get App
             </Link>
