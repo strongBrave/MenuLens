@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import DishListItem from './DishListItem';
 import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload, ZoomIn } from 'lucide-react';
 import { AVAILABLE_CURRENCIES } from '../utils/currency';
@@ -138,7 +139,7 @@ export default function MasterPanel({
                   onClick={() => toggleFilter(filter.id)}
                   className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 shadow-sm
                     ${activeFilters.includes(filter.id)
-                      ? 'bg-brand-primary text-white border-orange-600 shadow-md transform scale-105'
+                      ? 'bg-orange-600 text-white border-orange-600 shadow-md transform scale-105'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'}
                   `}
                 >
@@ -162,7 +163,7 @@ export default function MasterPanel({
            </div>
            <div className="w-full h-1.5 bg-orange-200 rounded-full overflow-hidden">
              <div 
-               className="h-full bg-brand-primary rounded-full transition-all duration-300 ease-out"
+               className="h-full bg-orange-600 rounded-full transition-all duration-300 ease-out"
                style={{ width: `${progressPercent}%` }}
              />
            </div>
@@ -184,7 +185,6 @@ export default function MasterPanel({
                 targetCurrency={targetCurrency}
                 isSelected={selectedDish && selectedDish.original_name === dish.original_name}
                 onClick={() => onSelectDish(dish)}
-                isSearching={dish.is_searching}
               />
             ))}
           </div>
@@ -254,23 +254,24 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
   if (hasDishes) {
     return (
       <div className="flex gap-3 h-[80px]">
-        {/* Lightbox Modal */}
-        <AnimatePresence>
-          {showLightbox && previewUrl && (
+        {/* Lightbox Modal - FIX: Use Portal to break out of container */}
+        {showLightbox && previewUrl && createPortal(
+          <AnimatePresence>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out"
+              className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out"
               onClick={() => setShowLightbox(false)}
             >
-              <img src={previewUrl} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" alt="Menu Original" />
+              <img src={previewUrl} className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl" alt="Menu Original" />
               <button className="absolute top-4 right-4 text-white bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
-                <X className="w-6 h-6" />
+                <X className="w-8 h-8" />
               </button>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>,
+          document.body
+        )}
 
         {/* Left: Thumbnail Preview */}
         <div 
@@ -336,7 +337,7 @@ function UploadSection({ onUpload, isLoading, onReset, hasDishes, validateConfig
                 <div className="flex flex-col gap-3 w-full max-w-[200px] animate-fade-in">
                   <button 
                     onClick={handleStartScan} 
-                    className="w-full py-3 bg-brand-primary hover:bg-orange-700 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 transform transition-transform hover:scale-105 active:scale-95 border border-white/20"
+                    className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xl flex items-center justify-center gap-2 transform transition-transform hover:scale-105 active:scale-95 border border-white/20"
                   >
                     <ScanSearch className="w-5 h-5" />
                     Scan Menu
