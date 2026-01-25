@@ -184,6 +184,7 @@ export default function MasterPanel({
                 targetCurrency={targetCurrency}
                 isSelected={selectedDish && selectedDish.original_name === dish.original_name}
                 onClick={() => onSelectDish(dish)}
+                isSearching={dish.is_searching}
               />
             ))}
           </div>

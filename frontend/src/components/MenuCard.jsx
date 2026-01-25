@@ -14,6 +14,7 @@ export default function MenuCard({ dish, onClick }) {
           urls={dish.image_urls}
           alt={dish.english_name}
           className="h-full w-full"
+          isSearching={dish.is_searching}
         />
         {/* Hover overlay hint */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">

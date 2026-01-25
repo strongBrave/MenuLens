@@ -52,7 +52,7 @@ function App() {
       const response = await analyzeMenuText(file, targetLanguage, sourceCurrency);
 
       if (response.data.success) {
-        const initialDishes = response.data.dishes || [];
+        const initialDishes = (response.data.dishes || []).map(d => ({ ...d, is_searching: true }));
         setDishes(initialDishes);
         setImageProgress({ current: 0, total: initialDishes.length });
         
@@ -79,30 +79,32 @@ function App() {
     let completed = 0;
 
     const fetchImage = async (dish) => {
+      let finalDish = { ...dish, is_searching: false };
+
       try {
         const res = await searchDishImage(dish);
         if (res.data.success && res.data.dishes && res.data.dishes.length > 0) {
-          const updatedDish = res.data.dishes[0];
-          
-          setDishes(currentDishes => {
-            const newDishes = [...currentDishes];
-            const idx = newDishes.findIndex(d => d.original_name === dish.original_name); 
-            if (idx !== -1) {
-              newDishes[idx] = updatedDish;
-            }
-            return newDishes;
-          });
-
-          setSelectedDish(currentSelected => {
-            if (currentSelected && currentSelected.original_name === dish.original_name) {
-              return updatedDish;
-            }
-            return currentSelected;
-          });
+          finalDish = { ...res.data.dishes[0], is_searching: false };
         }
       } catch (e) {
         console.warn(`Failed to load image for ${dish.english_name}`, e);
       } finally {
+        setDishes(currentDishes => {
+          const newDishes = [...currentDishes];
+          const idx = newDishes.findIndex(d => d.original_name === dish.original_name); 
+          if (idx !== -1) {
+            newDishes[idx] = finalDish;
+          }
+          return newDishes;
+        });
+
+        setSelectedDish(currentSelected => {
+          if (currentSelected && currentSelected.original_name === dish.original_name) {
+            return finalDish;
+          }
+          return currentSelected;
+        });
+
         completed++;
         setImageProgress(prev => ({ ...prev, current: completed }));
       }
