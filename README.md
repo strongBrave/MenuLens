@@ -57,20 +57,21 @@ MenuLens uses a **Two-Stage Pipeline** for maximum performance:
 
 ```mermaid
 graph TD
-    User[User Upload] --> |Image + Config| API_1[POST /api/analyze-text-only]
+    User[User Upload] --> |Image+Config| API_1[POST /api/analyze]
     
-    subgraph "Phase 1: Fast OCR & Analysis"
-        API_1 --> |Vision| Gemini[Gemini 2.0 Flash Lite]
-        Gemini --> |JSON (Dishes + Tags)| Client[Frontend List]
+    subgraph "Phase 1: Fast OCR"
+        API_1 --> |Vision| Gemini[Gemini 2.0]
+        Gemini --> |JSON| Client[Frontend List]
     end
     
     subgraph "Phase 2: Async RAG"
-        Client -.-> |Concurrent Req| API_2[POST /api/search-dish-image]
+        Client -.-> |Concurrent| API_2[POST /api/search]
         API_2 --> |Query| Google[Google Search]
-        Google --> |Candidates| Verifier[AI Vision Verifier]
+        Google --> |Candidates| Verifier[AI Verifier]
         Verifier --> |Scored Images| Client
     end
 ```
+
 
 ## 🏁 Getting Started
 
