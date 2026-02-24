@@ -14,6 +14,10 @@ class GeminiAnalyzer:
     def __init__(self):
         self._client = None
         self.model = settings.LLM_MODEL
+        
+    def _get_model(self, override_model: str = None) -> str:
+        """Get the model to use, with optional override"""
+        return override_model if override_model else self.model
     
     @property
     def client(self):
@@ -26,7 +30,7 @@ class GeminiAnalyzer:
             )
         return self._client
     
-    async def analyze_menu_image(self, base64_image: str, target_language: str = "English", source_currency: str = None) -> List[Dish]:
+    async def analyze_menu_image(self, base64_image: str, target_language: str = "English", source_currency: str = None, llm_model: str = None) -> List[Dish]:
         """
         分析菜单图片，识别菜品信息
         

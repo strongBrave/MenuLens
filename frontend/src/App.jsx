@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import MobileDrawer from './components/MobileDrawer';
 import AnnouncementModal from './components/AnnouncementModal';
 import ValidationModal from './components/ValidationModal';
+import SettingsModal from './components/SettingsModal';
 import ChatWidget from './components/ChatWidget';
 import { analyzeMenuText, searchDishImage } from './api/client';
 import './index.css';
@@ -28,6 +29,7 @@ function App() {
   const [selectedDish, setSelectedDish] = useState(null);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showValidation, setShowValidation] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [imageProgress, setImageProgress] = useState({ current: 0, total: 0 });
   const [targetCurrency, setTargetCurrency] = useState('');
   const [sourceCurrency, setSourceCurrency] = useState('');
@@ -172,7 +174,9 @@ function App() {
           activeFilters={activeFilters}
           setActiveFilters={setActiveFilters}
           showValidationModal={() => setShowValidation(true)}
-          currentMenuFile={menuImageFile} // Pass the file
+          currentMenuFile={menuImageFile}
+          showSettingsModal={showSettingsModal}
+          setShowSettingsModal={setShowSettingsModal}
         />
 
         {/* Right: Detail Panel (Desktop Only) */}

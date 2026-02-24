@@ -8,6 +8,19 @@ const client = axios.create({
   timeout: 6000000, // 6000 seconds
 });
 
+// Get model settings from localStorage
+function getModelSettings() {
+  try {
+    const saved = localStorage.getItem('menulens_model_settings');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to get model settings:', e);
+  }
+  return { llmModel: null, imageModel: null };
+}
+
 /**
  * 1. 快速分析文本 (Phase 1)
  * @param {File} imageFile 
@@ -21,6 +34,15 @@ export const analyzeMenuText = async (imageFile, targetLanguage = 'English', sou
   formData.append('target_language', targetLanguage);
   if (sourceCurrency) {
     formData.append('source_currency', sourceCurrency);
+  }
+  
+  // Add model settings from localStorage
+  const modelSettings = getModelSettings();
+  if (modelSettings.llmModel) {
+    formData.append('llm_model', modelSettings.llmModel);
+  }
+  if (modelSettings.imageModel) {
+    formData.append('generation_model', modelSettings.imageModel);
   }
   
   return client.post('/api/analyze-text-only', formData, {

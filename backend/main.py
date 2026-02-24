@@ -103,7 +103,7 @@ async def analyze_menu(
         
         # 5. 调用 Gemini 分析菜品 (传入 target_language 和 source_currency)
         logger.info(f"🔍 Analyzing menu from file: {file.filename} in {target_language} (Currency: {source_currency})")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency)
+        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency, llm_model)
         
         if not dishes:
             return MenuResponse(
@@ -151,7 +151,9 @@ async def analyze_menu(
 async def analyze_text_only(
     file: UploadFile = File(...), 
     target_language: str = Form("English"),
-    source_currency: Optional[str] = Form(None)
+    source_currency: Optional[str] = Form(None),
+    llm_model: Optional[str] = Form(None),
+    generation_model: Optional[str] = Form(None)
 ) -> MenuResponse:
     """
     第一阶段：仅分析文本（快速响应）
@@ -168,7 +170,7 @@ async def analyze_text_only(
         base64_image = encode_image_to_base64(contents)
         
         logger.info(f"🔍 Analyzing text only from file: {file.filename} in {target_language} (Currency: {source_currency})")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency)
+        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency, llm_model)
         
         return MenuResponse(
             success=True,

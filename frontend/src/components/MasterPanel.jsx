@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import DishListItem from './DishListItem';
-import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload, ZoomIn } from 'lucide-react';
+import { Loader2, DollarSign, Globe, Banknote, ScanSearch, X, Upload, ZoomIn, Settings } from 'lucide-react';
 import { AVAILABLE_CURRENCIES } from '../utils/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,7 +33,9 @@ export default function MasterPanel({
   activeFilters,
   setActiveFilters,
   showValidationModal,
-  currentMenuFile
+  currentMenuFile,
+  showSettingsModal,
+  setShowSettingsModal
 }) {
   const showProgress = imageProgress && imageProgress.total > 0 && imageProgress.current < imageProgress.total;
   const progressPercent = showProgress ? Math.round((imageProgress.current / imageProgress.total) * 100) : 0;
