@@ -81,9 +81,12 @@ export default function AnnouncementModal({ isOpen, onClose }) {
                     <h3 className="text-sm font-semibold text-slate-800">Contact & Support</h3>
                     <p className="text-sm text-slate-600 leading-relaxed mt-0.5">
                       Have suggestions or feature requests? We'd love to hear from you:<br/>
-                      <a href="mailto:yu1791046157@gmail.com" className="text-brand-600 font-medium hover:underline">
-                        yu1791046157@gmail.com
-                      </a>
+                    <a 
+                      href="mailto:yu1791046157@gmail.com" 
+                      className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-80 transition-opacity"
+                    >
+                      yu1791046157@gmail.com
+                    </a>
                     </p>
                   </div>
                 </div>
