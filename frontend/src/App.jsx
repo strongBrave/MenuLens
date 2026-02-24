@@ -155,6 +155,11 @@ function App() {
           onClose={() => setShowValidation(false)}
         />
 
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+        />
+
         {/* Left: Master Panel */}
         <MasterPanel 
           onUpload={handleUpload}
