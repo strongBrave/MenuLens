@@ -1,9 +1,8 @@
 # 🍽️ MenuLens
+[![Project Site](https://img.shields.io/badge/🌐-Project_Site-2563eb?style=for-the-badge&logo=vercel&logoColor=white)](https://menulens-vert.vercel.app/)
+
 > **AI-Powered Visual Menu Explorer**  
 > *Turn any text menu into a visual feast with Gemini AI & RAG Search.*
-
-![MenuLens Demo](./assets/main_page.png)
-[![Project Site](https://img.shields.io/badge/🌐-Project_Site-2563eb?style=for-the-badge&logo=vercel&logoColor=white)](https://menulens-vert.vercel.app/)
 ## ✨ Overview
 
 MenuLens is a modern full-stack application that helps travelers and foodies understand foreign menus instantly. 
