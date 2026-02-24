@@ -1,38 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, X, Bot, Image, Sparkles, Check } from 'lucide-react';
+import { Settings, X, Bot, Image, Sparkles, Check, Eye, EyeOff, Save, RotateCcw } from 'lucide-react';
 
-// Available LLM models
-const LLM_MODELS = [
-  { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (推荐)' },
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
-];
+const STORAGE_KEY = 'menulens_api_settings';
 
-// Available image generation models
-const IMAGE_MODELS = [
-  { value: 'dall-e-3', label: 'DALL-E 3 (推荐)' },
-  { value: 'dall-e-2', label: 'DALL-E 2' },
-  { value: 'imagen-3-generate_002', label: 'Imagen 3' },
-];
-
-const STORAGE_KEY = 'menulens_model_settings';
+const DEFAULT_SETTINGS = {
+  llmApiKey: '',
+  llmBaseUrl: 'https://www.dmxapi.cn/v1',
+  llmModel: 'gemini-2.5-flash-lite',
+  llmTemperature: '0.2',
+  llmTimeout: '30',
+  imageApiKey: '',
+  imageModel: 'dall-e-3',
+  imageEnabled: false,
+  enableRagPipeline: true,
+  imageVerifyThreshold: '0.7',
+};
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const [llmModel, setLlmModel] = useState('gemini-2.5-flash-lite');
-  const [imageModel, setImageModel] = useState('dall-e-3');
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [showApiKeys, setShowApiKeys] = useState({ llm: false, image: false });
   const [saved, setSaved] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem(STORAGE_KEY);
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        setLlmModel(parsed.llmModel || 'gemini-2.5-flash-lite');
-        setImageModel(parsed.imageModel || 'dall-e-3');
+        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
       } catch (e) {
         console.error('Failed to parse saved settings:', e);
       }
@@ -40,25 +35,26 @@ export default function SettingsModal({ isOpen, onClose }) {
   }, []);
 
   const handleSave = () => {
-    const settings = { llmModel, imageModel };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
       onClose();
-    }, 800);
+    }, 1000);
   };
 
   const handleReset = () => {
-    setLlmModel('gemini-2.5-flash-lite');
-    setImageModel('dall-e-3');
+    setSettings(DEFAULT_SETTINGS);
+  };
+
+  const updateSetting = (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -67,112 +63,207 @@ export default function SettingsModal({ isOpen, onClose }) {
             onClick={onClose}
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20"
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-white/20 max-h-[90vh] flex flex-col"
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-white/10 opacity-50" 
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-5 text-center relative overflow-hidden shrink-0">
+              <div className="absolute top-0 left-0 w-full h-full bg-white/10" 
                 style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 70%)' }} 
               />
-              <div className="relative z-10">
-                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-md border border-white/30">
-                  <Settings className="w-7 h-7 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-sm">模型配置</h2>
-                <p className="text-indigo-100 text-sm font-medium">Configure AI Models</p>
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                <Settings className="w-6 h-6 text-white" />
+                <h2 className="text-xl font-bold text-white">API 配置</h2>
               </div>
               <button 
                 onClick={onClose}
-                className="absolute top-4 right-4 text-white/70 hover:text-white hover:bg-white/20 p-1.5 rounded-full transition-colors"
+                className="absolute top-4 right-4 text-white/70 hover:text-white hover:bg-white/20 p-1.5 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Settings Form */}
-            <div className="p-6 md:p-8 space-y-6">
-              {/* LLM Model */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">
                   <Bot className="w-4 h-4 text-violet-600" />
-                  LLM 模型 (菜单识别)
-                </label>
-                <div className="relative">
-                  <select 
-                    value={llmModel}
-                    onChange={(e) => setLlmModel(e.target.value)}
-                    className="w-full appearance-none bg-violet-50 border border-violet-200 text-slate-800 text-sm font-medium py-3 pl-10 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer hover:bg-violet-100 transition-colors"
-                  >
-                    {LLM_MODELS.map(model => (
-                      <option key={model.value} value={model.value}>{model.label}</option>
-                    ))}
-                  </select>
-                  <Bot className="absolute left-3 top-3 w-4 h-4 text-violet-500 pointer-events-none" />
+                  LLM API 配置
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  用于识别菜单中的菜品、翻译和生成描述
-                </p>
-              </div>
-
-              {/* Image Generation Model */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3">
-                  <Image className="w-4 h-4 text-indigo-600" />
-                  图片生成模型
-                </label>
-                <div className="relative">
-                  <select 
-                    value={imageModel}
-                    onChange={(e) => setImageModel(e.target.value)}
-                    className="w-full appearance-none bg-indigo-50 border border-indigo-200 text-slate-800 text-sm font-medium py-3 pl-10 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:bg-indigo-100 transition-colors"
-                  >
-                    {IMAGE_MODELS.map(model => (
-                      <option key={model.value} value={model.value}>{model.label}</option>
-                    ))}
-                  </select>
-                  <Image className="absolute left-3 top-3 w-4 h-4 text-indigo-500 pointer-events-none" />
+                
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">API Key</label>
+                  <div className="relative">
+                    <input
+                      type={showApiKeys.llm ? 'text' : 'password'}
+                      value={settings.llmApiKey}
+                      onChange={(e) => updateSetting('llmApiKey', e.target.value)}
+                      placeholder="sk-..."
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKeys(prev => ({ ...prev, llm: !prev.llm }))}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      {showApiKeys.llm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  启用 AI 生图功能时使用 (实验性)
-                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Base URL</label>
+                    <input
+                      type="text"
+                      value={settings.llmBaseUrl}
+                      onChange={(e) => updateSetting('llmBaseUrl', e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Model</label>
+                    <input
+                      type="text"
+                      value={settings.llmModel}
+                      onChange={(e) => updateSetting('llmModel', e.target.value)}
+                      placeholder="gemini-2.5-flash-lite"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Temperature</label>
+                    <input
+                      type="text"
+                      value={settings.llmTemperature}
+                      onChange={(e) => updateSetting('llmTemperature', e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Timeout (秒)</label>
+                    <input
+                      type="text"
+                      value={settings.llmTimeout}
+                      onChange={(e) => updateSetting('llmTimeout', e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Info Badge */}
-              <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  设置将保存在浏览器本地，重启后保留。如需更改模型，下次上传菜单时将使用新配置。
-                </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <Image className="w-4 h-4 text-indigo-600" />
+                    图片生成 API
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-xs text-slate-500">启用</span>
+                    <div 
+                      onClick={() => updateSetting('imageEnabled', !settings.imageEnabled)}
+                      className={`w-10 h-5 rounded-full transition-colors relative ${settings.imageEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${settings.imageEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </div>
+                  </label>
+                </div>
+                
+                {settings.imageEnabled && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">API Key</label>
+                      <div className="relative">
+                        <input
+                          type={showApiKeys.image ? 'text' : 'password'}
+                          value={settings.imageApiKey}
+                          onChange={(e) => updateSetting('imageApiKey', e.target.value)}
+                          placeholder="sk-..."
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKeys(prev => ({ ...prev, image: !prev.image }))}
+                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                        >
+                          {showApiKeys.image ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Model</label>
+                      <input
+                        type="text"
+                        value={settings.imageModel}
+                        onChange={(e) => updateSetting('imageModel', e.target.value)}
+                        placeholder="dall-e-3"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleReset}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors"
-                >
-                  重置默认
-                </button>
-                <button
-                  onClick={handleSave}
-                  className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all shadow-lg ${
-                    saved 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white'
-                  }`}
-                >
-                  {saved ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Check className="w-4 h-4" /> 已保存
-                    </span>
-                  ) : '保存设置'}
-                </button>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  高级选项
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">启用 RAG Pipeline</span>
+                  <div 
+                    onClick={() => updateSetting('enableRagPipeline', !settings.enableRagPipeline)}
+                    className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer ${settings.enableRagPipeline ? 'bg-green-500' : 'bg-slate-300'}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${settings.enableRagPipeline ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">图片匹配阈值</label>
+                  <input
+                    type="text"
+                    value={settings.imageVerifyThreshold}
+                    onChange={(e) => updateSetting('imageVerifyThreshold', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                </div>
               </div>
+
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex gap-3 shrink-0 bg-slate-50">
+              <button
+                onClick={handleReset}
+                className="flex items-center justify-center gap-2 flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                重置
+              </button>
+              <button
+                onClick={handleSave}
+                className={`flex items-center justify-center gap-2 flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                  saved 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white'
+                }`}
+              >
+                {saved ? (
+                  <>
+                    <Check className="w-4 h-4" /> 已保存
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" /> 保存配置
+                  </>
+                )}
+              </button>
             </div>
           </motion.div>
         </div>
@@ -181,15 +272,14 @@ export default function SettingsModal({ isOpen, onClose }) {
   );
 }
 
-// Helper function to get settings from localStorage
-export function getModelSettings() {
+export function getApiSettings() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       return JSON.parse(saved);
     }
   } catch (e) {
-    console.error('Failed to get model settings:', e);
+    console.error('Failed to get API settings:', e);
   }
-  return { llmModel: null, imageModel: null };
+  return null;
 }
