@@ -22,7 +22,8 @@ class GoogleSearcher:
     async def search_images(
         self,
         query: str,
-        num: int = 3
+        num: int = 3,
+        api_key: Optional[str] = None
     ) -> List[str]:
         """
         搜索图片并返回多个候选 URL
@@ -83,7 +84,12 @@ class GoogleSearcher:
             logger.error(f"Search error for '{query}': {type(e).__name__}: {str(e)}")
             return []
     
-    async def enrich_dishes_with_images(self, dishes: List[Dish]) -> List[Dish]:
+    async def enrich_dishes_with_images(
+        self,
+        dishes: List[Dish],
+        serpapi_key: Optional[str] = None,
+        search_candidate_results: Optional[int] = None
+    ) -> List[Dish]:
         """
         为菜品列表搜索图片（增强模式，多结果）
         
@@ -93,6 +99,10 @@ class GoogleSearcher:
         Returns:
             带有图片 URL 列表的菜品列表
         """
+        num_results = 3
+        if isinstance(search_candidate_results, int):
+            num_results = max(1, min(search_candidate_results, 10))
+
         semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_SEARCHES)
         
         async with aiohttp.ClientSession() as session:
@@ -118,7 +128,7 @@ class GoogleSearcher:
         async with semaphore:
             try:
                 # 搜索 Top 3 图片
-                urls = await self.search_images(dish.search_term, num=3)
+                urls = await self.search_images(dish.search_term, num=num_results)
                 
                 if urls:
                     dish.image_urls = urls

@@ -18,6 +18,12 @@ class ImageVerifier:
     def __init__(self):
         self._client = None
         self.model = "gemini-2.5-flash-lite"  # 快速且便宜的模型用于验证
+
+    def _normalize_optional_str(self, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized if normalized else None
     
     @property
     def client(self) -> OpenAI:
@@ -28,13 +34,36 @@ class ImageVerifier:
                 base_url=settings.LLM_BASE_URL,
             )
         return self._client
+
+    def _get_client(self, llm_api_key: Optional[str] = None, llm_base_url: Optional[str] = None) -> OpenAI:
+        normalized_api_key = self._normalize_optional_str(llm_api_key)
+        normalized_base_url = self._normalize_optional_str(llm_base_url)
+
+        if not normalized_api_key and not normalized_base_url:
+            if not settings.LLM_API_KEY:
+                raise ValueError("LLM API key is missing for image verification")
+            return self.client
+
+        effective_api_key = normalized_api_key or settings.LLM_API_KEY
+        if not effective_api_key:
+            raise ValueError("LLM API key is missing for image verification")
+
+        return OpenAI(
+            api_key=effective_api_key,
+            base_url=normalized_base_url or settings.LLM_BASE_URL,
+        )
     
     async def verify_image_relevance(
         self,
         dish_name: str,
         description: str,
         image_url: str,
-        original_name: str = ""
+        original_name: str = "",
+        llm_api_key: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        llm_temperature: Optional[float] = None,
+        llm_timeout: Optional[int] = None
     ) -> float:
         """
         验证图片是否与菜品相关
@@ -73,7 +102,12 @@ class ImageVerifier:
                 self._call_verify_api,
                 dish_name=dish_name,
                 image_url=image_url,
-                prompt=prompt
+                prompt=prompt,
+                llm_api_key=llm_api_key,
+                llm_base_url=llm_base_url,
+                llm_model=llm_model,
+                llm_temperature=llm_temperature,
+                llm_timeout=llm_timeout,
             )
             
             # 解析分数
@@ -107,7 +141,17 @@ class ImageVerifier:
                 logger.error(f"Error verifying image for {dish_name}: {str(e)}")
             return 0.0
     
-    def _call_verify_api(self, dish_name: str, image_url: str, prompt: str) -> str:
+    def _call_verify_api(
+        self,
+        dish_name: str,
+        image_url: str,
+        prompt: str,
+        llm_api_key: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        llm_temperature: Optional[float] = None,
+        llm_timeout: Optional[int] = None
+    ) -> str:
         """
         同步 API 调用（在线程中执行以保持异步）
         
@@ -115,11 +159,15 @@ class ImageVerifier:
         """
         try:
             # 使用 chat.completions.create（OpenAI SDK 的正确方法）
-            message = self.client.chat.completions.create(
-                model=self.model,
-                max_tokens=10,
-                timeout=settings.IMAGE_VERIFY_TIMEOUT,
-                messages=[
+            client = self._get_client(llm_api_key, llm_base_url)
+            model = self._normalize_optional_str(llm_model) or self.model
+            timeout = llm_timeout if llm_timeout is not None else settings.IMAGE_VERIFY_TIMEOUT
+
+            request_kwargs = {
+                "model": model,
+                "max_tokens": 10,
+                "timeout": timeout,
+                "messages": [
                     {
                         "role": "user",
                         "content": [
@@ -136,7 +184,11 @@ class ImageVerifier:
                         ]
                     }
                 ]
-            )
+            }
+            if llm_temperature is not None:
+                request_kwargs["temperature"] = llm_temperature
+
+            message = client.chat.completions.create(**request_kwargs)
             
             # 提取响应文本
             response_text = message.choices[0].message.content.strip()

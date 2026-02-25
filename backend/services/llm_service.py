@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import asyncio
-from typing import List
+from typing import List, Optional
 from openai import OpenAI, APIError, APITimeoutError
 from schemas import Dish, ChatRequest
 from config import settings
@@ -15,9 +15,15 @@ class GeminiAnalyzer:
         self._client = None
         self.model = settings.LLM_MODEL
         
-    def _get_model(self, override_model: str = None) -> str:
+    def _get_model(self, override_model: Optional[str] = None) -> str:
         """Get the model to use, with optional override"""
         return override_model if override_model else self.model
+
+    def _normalize_optional_str(self, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized if normalized else None
     
     @property
     def client(self):
@@ -29,8 +35,38 @@ class GeminiAnalyzer:
                 base_url=settings.LLM_BASE_URL
             )
         return self._client
+
+    def _get_client(self, llm_api_key: Optional[str] = None, llm_base_url: Optional[str] = None) -> OpenAI:
+        """获取客户端，支持按请求覆盖 API Key / Base URL。"""
+        normalized_api_key = self._normalize_optional_str(llm_api_key)
+        normalized_base_url = self._normalize_optional_str(llm_base_url)
+
+        # 未覆盖时复用全局客户端
+        if not normalized_api_key and not normalized_base_url:
+            if not settings.LLM_API_KEY:
+                raise ValueError("LLM API key is missing. Please set it in Settings or .env")
+            return self.client
+
+        effective_api_key = normalized_api_key or settings.LLM_API_KEY
+        if not effective_api_key:
+            raise ValueError("LLM API key is missing. Please set it in Settings or .env")
+
+        return OpenAI(
+            api_key=effective_api_key,
+            base_url=normalized_base_url or settings.LLM_BASE_URL
+        )
     
-    async def analyze_menu_image(self, base64_image: str, target_language: str = "English", source_currency: str = None, llm_model: str = None) -> List[Dish]:
+    async def analyze_menu_image(
+        self,
+        base64_image: str,
+        target_language: str = "English",
+        source_currency: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        llm_api_key: Optional[str] = None,
+        llm_base_url: Optional[str] = None,
+        llm_temperature: Optional[float] = None,
+        llm_timeout: Optional[int] = None
+    ) -> List[Dish]:
         """
         分析菜单图片，识别菜品信息
         
@@ -45,6 +81,11 @@ class GeminiAnalyzer:
             APIError: API调用失败
         """
         try:
+            model = self._get_model(self._normalize_optional_str(llm_model))
+            client = self._get_client(llm_api_key, llm_base_url)
+            temperature = llm_temperature if llm_temperature is not None else settings.LLM_TEMPERATURE
+            timeout = llm_timeout if llm_timeout is not None else settings.LLM_TIMEOUT
+
             # 构造消息
             message = {
                 "role": "user",
@@ -64,11 +105,11 @@ class GeminiAnalyzer:
             
             # 调用 Gemini API
             response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model=self.model,
+                client.chat.completions.create,
+                model=model,
                 messages=[message],
-                temperature=settings.LLM_TEMPERATURE,
-                timeout=settings.LLM_TIMEOUT
+                temperature=temperature,
+                timeout=timeout
             )
             
             # 解析响应
@@ -118,6 +159,11 @@ class GeminiAnalyzer:
         基于菜单上下文与用户聊天
         """
         try:
+            model = self._get_model(self._normalize_optional_str(request.llm_model))
+            client = self._get_client(request.llm_api_key, request.llm_base_url)
+            temperature = request.llm_temperature if request.llm_temperature is not None else 0.7
+            timeout = request.llm_timeout if request.llm_timeout is not None else 20
+
             # 构造上下文 Prompt
             menu_context = "Here is the menu data you have analyzed:\n"
             for dish in request.dishes:
@@ -198,11 +244,11 @@ You're a helpful friend, not a robot. Be natural, be helpful, and make their din
             messages.append({"role": "user", "content": request.message})
 
             response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model=self.model,
+                client.chat.completions.create,
+                model=model,
                 messages=messages,
-                temperature=0.7, # Slightly higher for creative recommendations
-                timeout=20
+                temperature=temperature,
+                timeout=timeout
             )
             
             return response.choices[0].message.content

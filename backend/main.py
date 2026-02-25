@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 import logging
 import base64
-from typing import Optional
+from typing import Optional, Union
 import io
 from PIL import Image
 
 from config import settings
-from schemas import MenuResponse, Dish, MenuRequest, ChatRequest, ChatResponse
+from schemas import MenuResponse, Dish, MenuRequest, ChatRequest, ChatResponse, SearchDishImageRequest
 from services.llm_service import gemini_analyzer
 from services import hybrid_pipeline as hp_module
 from services.image_proxy import image_proxy
@@ -25,6 +25,12 @@ else:
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _resolve_bool_override(override: Optional[bool], default: bool) -> bool:
+    if isinstance(override, bool):
+        return override
+    return default
 
 
 # 创建 FastAPI 应用
@@ -80,7 +86,19 @@ async def health_check():
 async def analyze_menu(
     file: UploadFile = File(...), 
     target_language: str = Form("English"),
-    source_currency: Optional[str] = Form(None)
+    source_currency: Optional[str] = Form(None),
+    llm_model: Optional[str] = Form(None),
+    llm_api_key: Optional[str] = Form(None),
+    llm_base_url: Optional[str] = Form(None),
+    llm_temperature: Optional[float] = Form(None),
+    llm_timeout: Optional[int] = Form(None),
+    serpapi_key: Optional[str] = Form(None),
+    search_candidate_results: Optional[int] = Form(None),
+    generation_api_key: Optional[str] = Form(None),
+    enable_image_generation: Optional[bool] = Form(None),
+    enable_rag_pipeline: Optional[bool] = Form(None),
+    image_verify_threshold: Optional[float] = Form(None),
+    generation_model: Optional[str] = Form(None)
 ) -> MenuResponse:
     """
     分析菜单图片并获取图片
@@ -103,7 +121,16 @@ async def analyze_menu(
         
         # 5. 调用 Gemini 分析菜品 (传入 target_language 和 source_currency)
         logger.info(f"🔍 Analyzing menu from file: {file.filename} in {target_language} (Currency: {source_currency})")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency, llm_model)
+        dishes = await gemini_analyzer.analyze_menu_image(
+            base64_image=base64_image,
+            target_language=target_language,
+            source_currency=source_currency,
+            llm_model=llm_model,
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url,
+            llm_temperature=llm_temperature,
+            llm_timeout=llm_timeout,
+        )
         
         if not dishes:
             return MenuResponse(
@@ -114,17 +141,35 @@ async def analyze_menu(
         
         # 6. 使用 RAG Pipeline 获取图片
         logger.info(f"🚀 RAG Pipeline: Processing {len(dishes)} dishes")
+        rag_pipeline_enabled = _resolve_bool_override(enable_rag_pipeline, settings.ENABLE_RAG_PIPELINE)
         
-        if settings.ENABLE_RAG_PIPELINE and _hybrid_pipeline:
+        if rag_pipeline_enabled and _hybrid_pipeline:
             # 使用新的混合 Pipeline
-            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images(dishes)
+            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images(
+                dishes,
+                serpapi_key=serpapi_key,
+                search_candidate_results=search_candidate_results,
+                llm_api_key=llm_api_key,
+                llm_base_url=llm_base_url,
+                llm_model=llm_model,
+                llm_temperature=llm_temperature,
+                llm_timeout=llm_timeout,
+                generation_api_key=generation_api_key,
+                generation_model=generation_model,
+                enable_image_generation=enable_image_generation,
+                image_verify_threshold=image_verify_threshold
+            )
         else:
             # 使用传统搜索（向后兼容）
             if not _hybrid_pipeline:
                 logger.warning("⚠️  RAG Pipeline not initialized, using fallback search")
             else:
                 logger.info("RAG Pipeline disabled in config, using legacy search")
-            enriched_dishes = await google_searcher.enrich_dishes_with_images(dishes)
+            enriched_dishes = await searcher.enrich_dishes_with_images(
+                dishes,
+                serpapi_key=serpapi_key,
+                search_candidate_results=search_candidate_results
+            )
         
         logger.info(f"✅ Successfully processed menu with {len(enriched_dishes)} dishes")
         
@@ -134,7 +179,7 @@ async def analyze_menu(
             metadata={
                 "total_dishes": len(enriched_dishes),
                 "filename": file.filename,
-                "rag_pipeline": settings.ENABLE_RAG_PIPELINE,
+                "rag_pipeline": rag_pipeline_enabled,
                 "language": target_language
             }
         )
@@ -153,6 +198,16 @@ async def analyze_text_only(
     target_language: str = Form("English"),
     source_currency: Optional[str] = Form(None),
     llm_model: Optional[str] = Form(None),
+    llm_api_key: Optional[str] = Form(None),
+    llm_base_url: Optional[str] = Form(None),
+    llm_temperature: Optional[float] = Form(None),
+    llm_timeout: Optional[int] = Form(None),
+    serpapi_key: Optional[str] = Form(None),
+    search_candidate_results: Optional[int] = Form(None),
+    generation_api_key: Optional[str] = Form(None),
+    enable_image_generation: Optional[bool] = Form(None),
+    enable_rag_pipeline: Optional[bool] = Form(None),
+    image_verify_threshold: Optional[float] = Form(None),
     generation_model: Optional[str] = Form(None)
 ) -> MenuResponse:
     """
@@ -170,7 +225,16 @@ async def analyze_text_only(
         base64_image = encode_image_to_base64(contents)
         
         logger.info(f"🔍 Analyzing text only from file: {file.filename} in {target_language} (Currency: {source_currency})")
-        dishes = await gemini_analyzer.analyze_menu_image(base64_image, target_language, source_currency, llm_model)
+        dishes = await gemini_analyzer.analyze_menu_image(
+            base64_image=base64_image,
+            target_language=target_language,
+            source_currency=source_currency,
+            llm_model=llm_model,
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url,
+            llm_temperature=llm_temperature,
+            llm_timeout=llm_timeout,
+        )
         
         return MenuResponse(
             success=True,
@@ -191,17 +255,64 @@ async def analyze_text_only(
 
 
 @app.post("/api/search-dish-image", response_model=MenuResponse)
-async def search_dish_image(dish: Dish) -> MenuResponse:
+async def search_dish_image(request: Union[Dish, SearchDishImageRequest]) -> MenuResponse:
     """
     第二阶段：为单个菜品搜索图片（异步加载）
     """
     try:
-        logger.info(f"🔍 Searching images for dish: {dish.english_name}")
-        
-        if settings.ENABLE_RAG_PIPELINE and _hybrid_pipeline:
-            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images([dish])
+        if isinstance(request, SearchDishImageRequest):
+            dish = request.dish
+            serpapi_key = request.serpapi_key
+            search_candidate_results = request.search_candidate_results
+            llm_api_key = request.llm_api_key
+            llm_base_url = request.llm_base_url
+            llm_model = request.llm_model
+            llm_temperature = request.llm_temperature
+            llm_timeout = request.llm_timeout
+            generation_api_key = request.generation_api_key
+            generation_model = request.generation_model
+            enable_image_generation = request.enable_image_generation
+            enable_rag_pipeline = request.enable_rag_pipeline
+            image_verify_threshold = request.image_verify_threshold
         else:
-            enriched_dishes = await searcher.enrich_dishes_with_images([dish])
+            dish = request
+            serpapi_key = None
+            search_candidate_results = None
+            llm_api_key = None
+            llm_base_url = None
+            llm_model = None
+            llm_temperature = None
+            llm_timeout = None
+            generation_api_key = None
+            generation_model = None
+            enable_image_generation = None
+            enable_rag_pipeline = None
+            image_verify_threshold = None
+
+        logger.info(f"🔍 Searching images for dish: {dish.english_name}")
+        rag_pipeline_enabled = _resolve_bool_override(enable_rag_pipeline, settings.ENABLE_RAG_PIPELINE)
+        
+        if rag_pipeline_enabled and _hybrid_pipeline:
+            enriched_dishes = await _hybrid_pipeline.enrich_dishes_with_images(
+                [dish],
+                serpapi_key=serpapi_key,
+                search_candidate_results=search_candidate_results,
+                llm_api_key=llm_api_key,
+                llm_base_url=llm_base_url,
+                llm_model=llm_model,
+                llm_temperature=llm_temperature,
+                llm_timeout=llm_timeout,
+                generation_api_key=generation_api_key,
+                generation_model=generation_model,
+                enable_image_generation=enable_image_generation,
+                image_verify_threshold=image_verify_threshold
+            )
+        else:
+            enriched_dishes = await searcher.enrich_dishes_with_images(
+                [dish],
+                serpapi_key=serpapi_key,
+                search_candidate_results=search_candidate_results
+            )
         
         return MenuResponse(
             success=True,

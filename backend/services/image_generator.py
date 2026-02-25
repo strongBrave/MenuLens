@@ -19,12 +19,22 @@ class ImageGenerator:
         self.api_key = api_key
         self.model = model
         self.base_url = base_url
+
+    def _resolve_generation_url(self, base_url: str) -> str:
+        """兼容 base_url 为 /v1 或 /images/generations 两种格式。"""
+        normalized = (base_url or "").rstrip("/")
+        if normalized.endswith("/images/generations"):
+            return normalized
+        return f"{normalized}/images/generations"
     
     async def generate_image(
         self,
         english_name: str,
         original_name: str,
-        description: str
+        description: str,
+        generation_api_key: Optional[str] = None,
+        generation_model: Optional[str] = None,
+        generation_base_url: Optional[str] = None
     ) -> Optional[str]:
         """
         生成菜品图片
@@ -37,8 +47,15 @@ class ImageGenerator:
         Returns:
             生成图片的 URL，失败返回 None
         """
-        if not self.api_key:
+        effective_api_key = (generation_api_key or "").strip() or self.api_key
+        effective_model = (generation_model or "").strip() or self.model
+        effective_base_url = (generation_base_url or "").strip() or self.base_url
+
+        if not effective_api_key:
             logger.warning("Image generation API key not configured, skipping generation")
+            return None
+        if not effective_base_url:
+            logger.warning("Image generation base URL not configured, skipping generation")
             return None
         
         try:
@@ -50,13 +67,13 @@ class ImageGenerator:
             timeout = aiohttp.ClientTimeout(total=60)
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.base_url}/images/generations",
+                    self._resolve_generation_url(effective_base_url),
                     headers={
-                        "Authorization": f"Bearer {self.api_key}",
+                        "Authorization": f"Bearer {effective_api_key}",
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": self.model,
+                        "model": effective_model,
                         "prompt": prompt,
                         "n": 1,
                         "size": "1024x1024",

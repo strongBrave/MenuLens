@@ -21,7 +21,8 @@ class SerpAPISearcher:
     async def search_images(
         self,
         query: str,
-        num: int = 3
+        num: int = 3,
+        api_key: Optional[str] = None
     ) -> List[str]:
         """
         通过 SerpAPI 搜索图片
@@ -39,14 +40,15 @@ class SerpAPISearcher:
         Returns:
             图片 URL 列表
         """
-        if not self.api_key:
+        effective_api_key = (api_key or "").strip() or self.api_key
+        if not effective_api_key:
             logger.warning("SerpAPI key not configured")
             return []
         
         try:
             params = {
                 "q": query,
-                "api_key": self.api_key,
+                "api_key": effective_api_key,
                 "engine": self.engine,
                 "tbm": "isch",  # 图片搜索
                 "num": min(num, 10),  # 最多 10 个结果
@@ -85,7 +87,12 @@ class SerpAPISearcher:
             logger.error(f"SerpAPI error for '{query}': {type(e).__name__}: {str(e)}")
             return []
     
-    async def enrich_dishes_with_images(self, dishes: List) -> List:
+    async def enrich_dishes_with_images(
+        self,
+        dishes: List,
+        serpapi_key: Optional[str] = None,
+        search_candidate_results: Optional[int] = None
+    ) -> List:
         """
         为菜品列表搜索图片（传统模式，单结果）
         
@@ -99,13 +106,21 @@ class SerpAPISearcher:
         """
         from schemas import Dish  # 本地导入避免循环依赖
         
+        num_results = 3
+        if isinstance(search_candidate_results, int):
+            num_results = max(1, min(search_candidate_results, 10))
+
         semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_SEARCHES)
         
         async def search_one_dish(dish: Dish) -> Optional[str]:
             """搜索单个菜品的图片"""
             async with semaphore:
                 try:
-                    urls = await self.search_images(dish.search_term, num=3)
+                    urls = await self.search_images(
+                        dish.search_term,
+                        num=num_results,
+                        api_key=serpapi_key
+                    )
                     if urls:
                         return urls[0]
                     return None

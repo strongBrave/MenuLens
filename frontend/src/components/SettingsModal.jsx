@@ -10,6 +10,8 @@ const DEFAULT_SETTINGS = {
   llmModel: 'gemini-2.5-flash-lite',
   llmTemperature: '0.2',
   llmTimeout: '30',
+  serpApiKey: '',
+  searchCandidateResults: '10',
   imageApiKey: '',
   imageModel: 'dall-e-3',
   imageEnabled: false,
@@ -19,7 +21,7 @@ const DEFAULT_SETTINGS = {
 
 export default function SettingsModal({ isOpen, onClose }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [showApiKeys, setShowApiKeys] = useState({ llm: false, image: false });
+  const [showApiKeys, setShowApiKeys] = useState({ llm: false, image: false, serpapi: false });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -213,6 +215,38 @@ export default function SettingsModal({ isOpen, onClose }) {
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">
                   <Sparkles className="w-4 h-4 text-amber-500" />
                   高级选项
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">SerpAPI Key</label>
+                  <div className="relative">
+                    <input
+                      type={showApiKeys.serpapi ? 'text' : 'password'}
+                      value={settings.serpApiKey}
+                      onChange={(e) => updateSetting('serpApiKey', e.target.value)}
+                      placeholder="serpapi key"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKeys(prev => ({ ...prev, serpapi: !prev.serpapi }))}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      {showApiKeys.serpapi ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">候选图片数量 (SEARCH_CANDIDATE_RESULTS)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={settings.searchCandidateResults}
+                    onChange={(e) => updateSetting('searchCandidateResults', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm py-2.5 pl-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">

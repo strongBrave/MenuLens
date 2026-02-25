@@ -69,7 +69,11 @@ function App() {
         setLoading(false);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'An error occurred';
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        err.message ||
+        'An error occurred';
       setError(errorMessage);
       setLoading(false);
       console.error('Error:', err);

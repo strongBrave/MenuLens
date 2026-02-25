@@ -71,6 +71,11 @@ class ChatRequest(BaseModel):
     message: str = Field(..., description="用户消息")
     dishes: List[Dish] = Field(..., description="当前菜单的所有菜品上下文")
     history: List[dict] = Field(default_factory=list, description="对话历史 [{'role': 'user', 'content': '...'}, ...]")
+    llm_api_key: Optional[str] = Field(None, description="运行时覆盖 LLM API Key")
+    llm_base_url: Optional[str] = Field(None, description="运行时覆盖 LLM Base URL")
+    llm_model: Optional[str] = Field(None, description="运行时覆盖 LLM Model")
+    llm_temperature: Optional[float] = Field(None, description="运行时覆盖 LLM Temperature")
+    llm_timeout: Optional[int] = Field(None, description="运行时覆盖 LLM Timeout")
 
 
 class ChatResponse(BaseModel):
@@ -78,3 +83,23 @@ class ChatResponse(BaseModel):
     success: bool
     reply: str
     error: Optional[str] = None
+
+
+class SearchDishImageRequest(BaseModel):
+    """单菜品图片搜索请求（支持运行时覆盖搜索配置）"""
+    dish: Dish = Field(..., description="需要搜索图片的菜品")
+    serpapi_key: Optional[str] = Field(None, description="运行时覆盖 SerpAPI Key")
+    search_candidate_results: Optional[int] = Field(
+        None,
+        description="候选图片数量（1-10）"
+    )
+    llm_api_key: Optional[str] = Field(None, description="运行时覆盖 LLM API Key")
+    llm_base_url: Optional[str] = Field(None, description="运行时覆盖 LLM Base URL")
+    llm_model: Optional[str] = Field(None, description="运行时覆盖 LLM Model")
+    llm_temperature: Optional[float] = Field(None, description="运行时覆盖 LLM Temperature")
+    llm_timeout: Optional[int] = Field(None, description="运行时覆盖 LLM Timeout")
+    generation_api_key: Optional[str] = Field(None, description="运行时覆盖图片生成 API Key")
+    generation_model: Optional[str] = Field(None, description="运行时覆盖图片生成模型")
+    enable_image_generation: Optional[bool] = Field(None, description="是否启用图片生成降级")
+    enable_rag_pipeline: Optional[bool] = Field(None, description="是否启用 RAG Pipeline")
+    image_verify_threshold: Optional[float] = Field(None, description="图片验证阈值 (0-1)")

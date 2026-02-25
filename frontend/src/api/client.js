@@ -8,17 +8,96 @@ const client = axios.create({
   timeout: 6000000, // 6000 seconds
 });
 
-// Get model settings from localStorage
-function getModelSettings() {
+// Get API settings from localStorage
+function getApiSettings() {
   try {
-    const saved = localStorage.getItem('menulens_model_settings');
-    if (saved) {
-      return JSON.parse(saved);
+    const savedApiSettings = localStorage.getItem('menulens_api_settings');
+    if (savedApiSettings) {
+      return JSON.parse(savedApiSettings);
+    }
+
+    // Backward compatibility for old key
+    const legacySettings = localStorage.getItem('menulens_model_settings');
+    if (legacySettings) {
+      return JSON.parse(legacySettings);
     }
   } catch (e) {
-    console.error('Failed to get model settings:', e);
+    console.error('Failed to get API settings:', e);
   }
-  return { llmModel: null, imageModel: null };
+  return {};
+}
+
+function appendIfPresent(formData, key, value) {
+  if (value === undefined || value === null) return;
+  const normalized = typeof value === 'string' ? value.trim() : value;
+  if (normalized === '') return;
+  formData.append(key, String(normalized));
+}
+
+function normalizeOptionalString(value) {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized === '' ? undefined : normalized;
+}
+
+function normalizeOptionalInt(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function normalizeOptionalFloat(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function normalizeOptionalBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return undefined;
+}
+
+function getRuntimeSettings() {
+  const settings = getApiSettings();
+  return {
+    llm_api_key: normalizeOptionalString(settings.llmApiKey),
+    llm_base_url: normalizeOptionalString(settings.llmBaseUrl),
+    llm_model: normalizeOptionalString(settings.llmModel),
+    llm_temperature: normalizeOptionalFloat(settings.llmTemperature),
+    llm_timeout: normalizeOptionalInt(settings.llmTimeout),
+    serpapi_key: normalizeOptionalString(settings.serpApiKey),
+    search_candidate_results: normalizeOptionalInt(settings.searchCandidateResults),
+    generation_api_key: normalizeOptionalString(settings.imageApiKey),
+    generation_model: normalizeOptionalString(settings.imageModel),
+    enable_image_generation: normalizeOptionalBoolean(settings.imageEnabled),
+    enable_rag_pipeline: normalizeOptionalBoolean(settings.enableRagPipeline),
+    image_verify_threshold: normalizeOptionalFloat(settings.imageVerifyThreshold),
+  };
+}
+
+function appendRuntimeSettings(formData) {
+  const runtimeSettings = getRuntimeSettings();
+  Object.entries(runtimeSettings).forEach(([key, value]) => {
+    appendIfPresent(formData, key, value);
+  });
+}
+
+function getSearchRuntimeSettings() {
+  return getRuntimeSettings();
+}
+
+function getChatRuntimeSettings() {
+  const runtimeSettings = getRuntimeSettings();
+  return {
+    llm_api_key: runtimeSettings.llm_api_key,
+    llm_base_url: runtimeSettings.llm_base_url,
+    llm_model: runtimeSettings.llm_model,
+    llm_temperature: runtimeSettings.llm_temperature,
+    llm_timeout: runtimeSettings.llm_timeout,
+  };
 }
 
 /**
@@ -36,14 +115,7 @@ export const analyzeMenuText = async (imageFile, targetLanguage = 'English', sou
     formData.append('source_currency', sourceCurrency);
   }
   
-  // Add model settings from localStorage
-  const modelSettings = getModelSettings();
-  if (modelSettings.llmModel) {
-    formData.append('llm_model', modelSettings.llmModel);
-  }
-  if (modelSettings.imageModel) {
-    formData.append('generation_model', modelSettings.imageModel);
-  }
+  appendRuntimeSettings(formData);
   
   return client.post('/api/analyze-text-only', formData, {
     headers: {
@@ -58,7 +130,10 @@ export const analyzeMenuText = async (imageFile, targetLanguage = 'English', sou
  * @returns {Promise}
  */
 export const searchDishImage = async (dish) => {
-  return client.post('/api/search-dish-image', dish);
+  return client.post('/api/search-dish-image', {
+    dish,
+    ...getSearchRuntimeSettings(),
+  });
 };
 
 // Original full analyze (Legacy)
@@ -69,6 +144,8 @@ export const analyzeMenu = async (imageFile, targetLanguage = 'English', sourceC
   if (sourceCurrency) {
     formData.append('source_currency', sourceCurrency);
   }
+
+  appendRuntimeSettings(formData);
   
   return client.post('/api/analyze-menu', formData, {
     headers: {
@@ -87,7 +164,8 @@ export const sendChatMessage = async (message, dishes, history = []) => {
   return client.post('/api/menu-chat', {
     message,
     dishes,
-    history
+    history,
+    ...getChatRuntimeSettings(),
   });
 };
 
